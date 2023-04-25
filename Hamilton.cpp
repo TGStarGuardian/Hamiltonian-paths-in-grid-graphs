@@ -153,15 +153,18 @@ public:
 		peeling r;
 
 		r.r1 = std::min(s.first, t.first) - 1;
-		r.r2 = std::max(s.first, t.first) + 1;
+		r.r2 = std::max(s.first, t.first);
 		r.r3 = std::min(s.second, t.second) - 1;
-		r.r4 = std::max(s.second, t.second) + 1;
+		r.r4 = std::max(s.second, t.second);
 
-		if(!(r.r1 % 2)) r.r1--;
-		if(!(_height - r.r2)) r.r2--;
-		if(!(r.r3 % 2)) r.r3--;
-		if(!(_width - r.r4)) r.r4--;
-
+		// if(!(r.r1 % 2)) r.r1--;
+		r.r1 -= !(r.r1 % 2);
+		// if(!(_height - r.r2) % 2) r.r2++;
+		r.r2 += !((_height - r.r2) % 2);
+		// if(!(r.r3 % 2)) r.r3--;
+		r.r3 -= !(r.r3 % 2);
+		// if(!(_width - r.r4) % 2) r.r4++;
+		r.r4 += !((_width - r.r4) % 2);
 		return r;
 
 
