@@ -34,6 +34,17 @@ public:
 
 	typedef struct peeling {
 		int r1, r2, r3, r4;
+
+		friend std::ostream& operator<<(std::ostream& os, Mesh::peeling p) {
+			os
+			<< "r1: " << p.r1
+			<< ", r2: " << p.r2
+			<< ", r3: " << p.r3
+			<< ", r4: " << p.r4
+			<< '\n';
+			return os;
+		}
+
 	} peeling;
 
 	Mesh(const std::vector<std::vector<T>>& G) {
@@ -140,6 +151,16 @@ public:
 
 	peeling peel(std::pair<int, int>& s, std::pair<int, int>& t) {
 		peeling r;
+
+		r.r1 = std::min(s.first, t.first) - 1;
+		r.r2 = std::max(s.first, t.first) + 1;
+		r.r3 = std::min(s.second, t.second) - 1;
+		r.r4 = std::max(s.second, t.second) + 1;
+
+		if(!(r.r1 % 2)) r.r1--;
+		if(!(_height - r.r2)) r.r2--;
+		if(!(r.r3 % 2)) r.r3--;
+		if(!(_width - r.r4)) r.r4--;
 
 		return r;
 
@@ -315,6 +336,9 @@ int main() {
 	for(const auto& l : cycle) {
 		std::cout << '(' << l.first.first << ", " << l.first.second << ") " << l.second << '\n';
 	}
+
+	Mesh<int>::peeling p = G.peel(s, t);
+	std::cout << p;
 
 	return 0;
 }
