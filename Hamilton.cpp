@@ -200,6 +200,7 @@ public:
 	std::list<std::pair<int, int>> find_path_m5(std::pair<int, int>& s, std::pair<int, int>& t) {
 		// first get the peeling
 		peeling r = peel(s, t);
+		std::list<std::pair<int, int>> ret;
 		// M5: [r1 + 1, r2] x [r3 + 1, r4]
 		std::pair<int, int> s1 = {s.first - r.r1 - 1, s.second - r.r3 - 1};
 		std::pair<int, int> t1 = {t.first - r.r1 - 1, t.second - r.r3 - 1};
@@ -221,8 +222,52 @@ public:
 				std::cout << p << ", " << q << '\n';
 
 				// connect s and p
-
-
+				int d = s1.second - p.second;
+				if(d > 0) {
+					// s is on the right, p is on the left side
+					// go to the right
+					for(int j = s1.second; j < m; j++)
+						ret.push_back({s1.first, j});
+					// go up/down and then turn left until s
+					for(int j = m - 1; j >= s1.second; j--)
+						ret.push_back({!s1.first, j});
+					// go in a zig-zag fashion until you reach p
+					int k = !s1.first;
+					for(int j = s1.second - 1; j >= 0; j--) {
+						ret.push_back({k, j});
+						ret.push_back({!k, j});
+						k = !k;
+					}
+				} else if(d < 0) {
+					// s is on the left, p is on the right side
+					// go to the left
+					for(int j = s1.second; j >= 0; j--)
+						ret.push_back({s1.first, j});
+					// go up/down and then turn right until s
+					for(int j = 0; j <= s1.second; j++)
+						ret.push_back({!s1.first, j});
+					// go in a zig-zag fashion until you reach p
+					int k = !s1.first;
+					for(int j = s1.second + 1; j < m; j++) {
+						ret.push_back({k, j});
+						ret.push_back({!k, j});
+						k = !k;
+					}
+				} else {
+					// they are on the same side
+					if(!s1.second) {
+						for(int j = 0; j < m; j++)
+							ret.push_back({0, j});
+						for(int j = m - 1; j >= 0; j--)
+							ret.push_back({1, j});
+					} else {
+						for(int j = m - 1; j >= 0; j--)
+							ret.push_back({0, j});
+						for(int j = 0; j < m; j++)
+							ret.push_back({1, j});
+					}
+				}
+				return ret;
 				// connect p and q
 
 
@@ -236,8 +281,74 @@ public:
 				std::cout << p << ", " << q << '\n';
 
 				// connect s and p
+				int d = s1.first - p.first;
 
+				if(d > 0) {
+					// s is below p
+					// go down
+					for(int i = s1.first; i < n; i++) {
+						ret.push_back({i, s1.second});
+					}
+					// then turn left/right
+					// then go upto the s
+					for(int i = m - 1; i >= s1.first; i--) {
+						ret.push_back({i, !s1.second});
+					}
+					// then go in a zig-zag fashion until you reach p
+					int k = !s1.second;
+					for(int i = s1.first - 1; i >= 0; i--) {
+						ret.push_back({i, k});
+						ret.push_back({i, !k});
+						k = !k;
+					}
+				} else if (d < 0) {
+					// s is above p
+					// go up
+					for(int i = s1.first; i >= 0; i--) {
+						ret.push_back({i, s1.second});
+					}
+					// then turn left/rigth
+					// go downto s
+					for(int i = 0; i <= s1.first; i++) {
+						ret.push_back({i, !s1.second});
+					}
+					// then go in a zig-zag fashion until you reach p
+					int k = !s1.second;
+					for(int i = s1.first + 1; i < n; i++) {
+						ret.push_back({i, k});
+						ret.push_back({i, !k});
+						k = !k;
+					}
 
+				} else {
+					// go to the top/bottom
+					// then right
+					// then to the bottom/top
+					if(!s.first) {
+						// go down
+						for(int i = 0; i < n; i++) {
+							// note that the second coordinate is 0
+							// that's because otherwise s == p
+							// and that's impossible because s and p
+							// have different colours
+							ret.push_back({i, 0});
+						}
+						// go up
+						for(int i = n - 1; i >= 0; i--) {
+							ret.push_back({i, 1});
+						}
+					} else {
+						// go up
+						for(int i = n - 1; i >= 0; i--) {
+							ret.push_back({i, 0});
+						}
+						// go down
+						for(int i = 0; i < n; i++) {
+							ret.push_back({i, 1});
+						}
+					}
+				}
+				return ret;
 				// connect p and q
 
 
@@ -458,7 +569,11 @@ int main() {
 	Mesh<int>::peeling p = G.peel(s, t);
 	std::cout << p;
 
-	G.find_path_m5(s, t);
+	auto path = G.find_path_m5(s, t);
+
+	for(const auto& l : path) {
+			std::cout << '(' << l.first << ", " << l.second << ")\n";
+	}
 
 	return 0;
 }
