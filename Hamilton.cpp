@@ -108,9 +108,12 @@ public:
 
 	bool has_hamiltonian_path(std::pair<int, int>& s, std::pair<int, int>& t, int width, int height) {
 
-		if(s.second > t.second) {
-			std::swap(s, t);
-		}
+		if(s.second > t.second) std::swap(s, t);
+
+		auto x = s;
+		auto y = t;
+
+		if(x.first > y.first) std::swap(x, y);
 
 		if(out_of_bounds(s.first, 0, height)
 				|| out_of_bounds(s.second, 0, width)
@@ -122,7 +125,8 @@ public:
 				!( (height == 1 && (!is_corner_vertex(s.second, width) || !is_corner_vertex(t.second, width)))
 				 || (width == 1 && (!is_corner_vertex(s.first, height) || !is_corner_vertex(t.first, height)))
 				 || ((width == 2 || height == 2) && connected_by_non_boundary_edge(s, t, width, height))
-				 || (height == 3 && !(width % 2) && ((s.first + s.second) % 2) && !((t.first + t.second) % 2) && ( (s.first == 1 && t.second > s.second) || (s.first != 1 && t.second >= s.second + 1)))
+				 || (width == 3 && !(height % 2) && ((x.first + x.second) % 2) && !((y.first + y.second) % 2) && ((x.second == 1 && y.first > x.first) || (x.second != 1 && y.first > x.first + 1)))
+				 || (height == 3 && !(width % 2) && ((s.first + s.second) % 2) && !((t.first + t.second) % 2) && ( (s.first == 1 && t.second > s.second) || (s.first != 1 && t.second > s.second + 1)))
 				)
 				;
 	}
@@ -209,6 +213,8 @@ public:
 		int n = r.r2 - r.r1;
 		int m = r.r4 - r.r3;
 		std::cout << n << '\n' << m << '\n';
+
+		if(!has_hamiltonian_path(s1, t1, m, n)) return {};
 
 		if(n < 4 && m < 4) {
 			return {};
