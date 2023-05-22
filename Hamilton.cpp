@@ -219,7 +219,10 @@ public:
 		if(n < 4 && m < 4) {
 			return {};
 
-		} else if(!(m % 2) && !(n % 2)) {
+		} else if((!(m % 2) && !(n%2) && (m > 4 || n > 4))
+				|| ((m % 2) && (n % 2) && (m > 5 || n > 5))
+				|| (!(m % 2) && (n % 2) && n > 3)
+				|| (!(n % 2) && (m % 2) && m > 3)) {
 			if(n > 4) {
 				// perform horizontal cut
 				if(s1.first > t1.first) std::swap(s1, t1);
