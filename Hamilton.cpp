@@ -273,10 +273,16 @@ public:
 							ret.push_back({1, j});
 					}
 				}
-				return ret;
 				// connect p and q
 
-
+				// just a zig-zag pattern
+				int k = p.second;
+				for(int i = p.first + 1; i < q.first; i++) {
+					for(int j = 0; j < m; j++)
+						ret.push_back({i, std::abs(j - k)});
+					k = std::abs(m - 1 - k);
+				}
+				return ret;
 				// connect q and t
 
 			} else if(m > 4) {
@@ -354,10 +360,16 @@ public:
 						}
 					}
 				}
-				return ret;
+
 				// connect p and q
-
-
+				// just a zig-zag pattern
+				int k = p.first;
+				for(int j = p.second + 1; j < q.second; j++) {
+					for(int i = 0; i < n; i++)
+						ret.push_back({std::abs(i - k), j});
+					k = std::abs(n - 1 - k);
+				}
+				return ret;
 				// connect q and t
 
 			} else {
