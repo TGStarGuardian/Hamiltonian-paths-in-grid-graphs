@@ -131,34 +131,34 @@ public:
 				;
 	}
 
-	std::list<std::pair<int, int>> find_hamiltonian_cycle(bool t) {
+	std::list<std::pair<int, int>> find_hamiltonian_cycle(bool t, int width, int height) {
 
-		if(!has_hamiltonian_cycle(_width, _height)) return {};
+		if(!has_hamiltonian_cycle(width, height)) return {};
 
 		std::list<std::pair<int, int>> ret;
 		if(t) {
-			if(!(_height % 2)) {
+			if(!(height % 2)) {
 				// left face is concave
-				hamiltonian_cycle_top(ret);
+				hamiltonian_cycle_top(ret, width, height);
 			} else {
 				// bottom face is concave
-				hamiltonian_cycle_left(ret);
+				hamiltonian_cycle_left(ret, width, height);
 			}
 		}
 			else {
-				if(!(_height % 2)) {
+				if(!(height % 2)) {
 					// right face is concave
-					hamiltonian_cycle_bottom(ret);
+					hamiltonian_cycle_bottom(ret, width, height);
 				} else {
 					// bottom face is concave
-					hamiltonian_cycle_right(ret);
+					hamiltonian_cycle_right(ret, width, height);
 				}
 			}
 
 		return ret;
 	}
 
-	peeling peel(std::pair<int, int>& s, std::pair<int, int>& t) {
+	peeling peel(std::pair<int, int>& s, std::pair<int, int>& t, int width, int height) {
 		peeling r;
 
 		r.r1 = std::min(s.first, t.first) - 1;
@@ -169,11 +169,11 @@ public:
 		// if(!(r.r1 % 2)) r.r1--;
 		r.r1 -= !(r.r1 % 2);
 		// if(!(_height - r.r2) % 2) r.r2++;
-		r.r2 += !((_height - r.r2) % 2);
+		r.r2 += !((height - r.r2) % 2);
 		// if(!(r.r3 % 2)) r.r3--;
 		r.r3 -= !(r.r3 % 2);
 		// if(!(_width - r.r4) % 2) r.r4++;
-		r.r4 += !((_width - r.r4) % 2);
+		r.r4 += !((width - r.r4) % 2);
 		return r;
 	}
 
@@ -201,9 +201,8 @@ public:
 		return ((t.first + t.second + m) % 2)? std::pair<int, int>(0, m-2) : std::pair<int, int>(n-1, m-2);
 	}
 
-	std::list<std::pair<int, int>> find_path_m5(std::pair<int, int>& s, std::pair<int, int>& t) {
-		// first get the peeling
-		peeling r = peel(s, t);
+	std::list<std::pair<int, int>> find_path_m5(std::pair<int, int>& s, std::pair<int, int>& t, peeling &r) {
+
 		std::list<std::pair<int, int>> ret;
 		// M5: [r1 + 1, r2] x [r3 + 1, r4]
 		std::pair<int, int> s1 = {s.first - r.r1 - 1, s.second - r.r3 - 1};
@@ -490,77 +489,138 @@ public:
 		return {};
 	}
 
+	std::list<std::pair<int, int>> find_hamiltonian_path(std::pair<int, int>& s, std::pair<int, int>& t, int width, int height) {
+
+		if(!has_hamiltonian_path(s, t, width, height)) return {};
+
+		// peel the matrix
+		peeling r = peel(s, t, width, height);
+
+		std::list<std::pair<int, int>> ret = find_path_m5(s, t, r);
+
+		if(ret.empty()) {
+
+			if(r.r2 - r.r1 == 1) {
+				if(height == 5 && s.first == 3 && t.first == 3) {
+
+				} else {
+					if(r.r1 >= 2)
+						r.r1--;
+					else
+						r.r2++;
+
+					ret = find_path_m5(s, t, r);
+
+					// etc etc etc
+				}
+			} else if(r.r4 - r.r3 == 1) {
+				if(width == 5 && s.second == 3 && t.second == 3) {
+
+				} else {
+					if(r.r3 >= 2)
+						r.r3--;
+					else
+						r.r4++;
+					ret = find_path_m5(s, t, r);
+				}
+
+			} else if(r.r2 - r.r1 == 2) {
+
+
+			} else if(r.r4 - r.r3 == 2) {
+
+
+			} else {
+
+
+			}
+
+		} else {
+			auto m1 = find_hamiltonian_cycle(true, r.r3 + 1, height);
+			auto m2 = find_hamiltonian_cycle(false, width - 1 - r.r4, height);
+			auto m3 = find_hamiltonian_cycle(true, r.r4 - r.r3, r.r1 + 1);
+			auto m4 = find_hamiltonian_cycle(false, r.r4 - r.r3, height - 1 - r.r2);
+
+			// connect cycles
+
+
+			// connect path and cycle
+
+		}
+
+		return ret;
+	}
 private:
 	std::vector<std::vector<T>> graph;
 	bool size_parity; // true when size is odd
 	int _height, _width;
 
-	void hamiltonian_cycle_left(std::list<std::pair<int, int>>& ret) {
-		for(int i = 0; i <= _height - 1; i++) {
+	void hamiltonian_cycle_left(std::list<std::pair<int, int>>& ret, int width, int height) {
+		for(int i = 0; i <= height - 1; i++) {
 			ret.push_back({i, 0});
 		}
 	// go in a serpentine fashion to the right
-		for(int j = 1; j <= _width - 1; j++) {
+		for(int j = 1; j <= width - 1; j++) {
 			if (j % 2) {
 				// for odd j, we go up
-				for(int i = _height - 1; i >= 1; i--) {
+				for(int i = height - 1; i >= 1; i--) {
 					ret.push_back({i, j});
 				}
 			} else {
 				// for even j, we go down
-				for(int i = 1; i <= _height - 1; i++) {
+				for(int i = 1; i <= height - 1; i++) {
 					ret.push_back({i, j});
 				}
 			}
 		}
 
 		// and finally we add a cap to the top
-		for(int j = _width - 1; j >= 1; j--) {
+		for(int j = width - 1; j >= 1; j--) {
 			ret.push_back({0, j});
 		}
 	}
 
-	void hamiltonian_cycle_top(std::list<std::pair<int, int>>& ret) {
-		for(int j = 0; j <= _width - 1; j++) {
+	void hamiltonian_cycle_top(std::list<std::pair<int, int>>& ret, int width, int height) {
+		for(int j = 0; j <= width - 1; j++) {
 			ret.push_back({0, j});
 		}
 	// go in a serpentine fashion to the right
-		for(int i = 1; i <= _height - 1; i++) {
+		for(int i = 1; i <= height - 1; i++) {
 			if (i % 2) {
 				// for odd j, we go up
-				for(int j = _width - 1; j >= 1; j--) {
+				for(int j = width - 1; j >= 1; j--) {
 					ret.push_back({i, j});
 				}
 			} else {
 				// for even j, we go down
-				for(int j = 1; j <= _width - 1; j++) {
+				for(int j = 1; j <= width - 1; j++) {
 					ret.push_back({i, j});
 				}
 			}
 		}
 
 		// and finally we add a cap to the top
-		for(int i = _height - 1; i >= 1; i--) {
+		for(int i = height - 1; i >= 1; i--) {
 			ret.push_back({i, 0});
 		}
 	}
 
-	void hamiltonian_cycle_bottom(std::list<std::pair<int, int>>& ret) {
+	void hamiltonian_cycle_bottom(std::list<std::pair<int, int>>& ret, int width, int height) {
 		// t == false --> only the top face is concave
 		// go all the way to the right
-		for(int j = 0; j <= _width - 1; j++) {
-			ret.push_back({_height - 1, j});
+		for(int j = 0; j <= width - 1; j++) {
+			ret.push_back({height - 1, j});
 		}
 		// go in a serpentine fashion to the top
-		for(int i = _height - 2; i >= 0; i--) {
-			if (!((i + _height) % 2)) {
+		for(int i = height - 2; i >= 0; i--) {
+			if (!((i + height) % 2)) {
 				// for even i + _height, we go to the left
-				for(int j = _width - 1; j >= 1; j--) {
+				for(int j = width - 1; j >= 1; j--) {
 					ret.push_back({i, j});
 				}
 			} else {
 				// for odd i + _height, we go to the right
-				for(int j = 1; j <= _width - 1; j++) {
+				for(int j = 1; j <= width - 1; j++) {
 					ret.push_back({i, j});
 				}
 			}
@@ -572,29 +632,29 @@ private:
 		}
 	}
 
-	void hamiltonian_cycle_right(std::list<std::pair<int, int>>& ret) {
+	void hamiltonian_cycle_right(std::list<std::pair<int, int>>& ret, int width, int height) {
 		// t == false --> only the top face is concave
 		// go all the way to the right
-		for(int i = 0; i <= _height - 1; i++) {
-			ret.push_back({i, _width - 1});
+		for(int i = 0; i <= height - 1; i++) {
+			ret.push_back({i, width - 1});
 		}
 		// go in a serpentine fashion to the top
-		for(int j = _width - 2; j >= 0; j--) {
-			if (!((j + _width) % 2)) {
+		for(int j = width - 2; j >= 0; j--) {
+			if (!((j + width) % 2)) {
 				// for even i + _height, we go to the left
-				for(int i = _height - 1; i >= 1; i--) {
+				for(int i = height - 1; i >= 1; i--) {
 					ret.push_back({i, j});
 				}
 			} else {
 				// for odd i + _height, we go to the right
-				for(int i = 1; i <= _height - 1; i++) {
+				for(int i = 1; i <= height - 1; i++) {
 					ret.push_back({i, j});
 				}
 			}
 		}
 
 		// and finally we add a cap to the left
-		for(int j = 0; j <= _width - 2; j++) {
+		for(int j = 0; j <= width - 2; j++) {
 			ret.push_back({0, j});
 		}
 	}
@@ -653,20 +713,28 @@ int main() {
 	std::cout << G.has_hamiltonian_path(s, t, G.get_width(), G.get_height()) << '\n';
 	std::cout << G.has_hamiltonian_cycle(G.get_width(), G.get_height()) << '\n';
 
-	std::list<std::pair<int, int>> cycle = G.find_hamiltonian_cycle(true);
+	std::list<std::pair<int, int>> cycle = G.find_hamiltonian_cycle(true, G.get_width(), G.get_height());
 	for(const auto& l : cycle) {
 		std::cout << '(' << l.first << ", " << l.second << ")\n";
 	}
 
-	Mesh<int>::peeling p = G.peel(s, t);
+	Mesh<int>::peeling p = G.peel(s, t, G.get_width(), G.get_height());
 	std::cout << p;
 
-	auto path = G.find_path_m5(s, t);
+	auto path = G.find_hamiltonian_path(s, t, G.get_width(), G.get_height());
 
-	std::cout << "The path in M5 is:\n";
+	std::cout << "The path is:\n";
 	for(const auto& l : path) {
 			std::cout << '(' << l.first << ", " << l.second << ")\n";
 	}
+
+	path = G.find_path_m5(s, t, p);
+	std::cout << "The path in M5 is:\n";
+		for(const auto& l : path) {
+				std::cout << '(' << l.first << ", " << l.second << ")\n";
+		}
+
+
 
 	return 0;
 }
