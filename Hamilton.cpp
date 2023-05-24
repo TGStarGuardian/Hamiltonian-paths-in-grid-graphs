@@ -201,6 +201,246 @@ public:
 		return ((t.first + t.second + m) % 2)? std::pair<int, int>(0, m-2) : std::pair<int, int>(n-1, m-2);
 	}
 
+	std::list<std::pair<int, int>> connect_s_p(std::pair<int, int>& s1, std::pair<int, int>&p, int m, int n) {
+		std::list<std::pair<int, int>> ret;
+
+		if(n >= 4) {
+			// horizontal cut
+			// connect s and p
+			int d = s1.second - p.second;
+			if(d > 0) {
+				// s is on the right, p is on the left side
+				// go to the right
+				for(int j = s1.second; j < m; j++)
+					ret.push_back({s1.first, j});
+				// go up/down and then turn left until s
+				for(int j = m - 1; j >= s1.second; j--)
+					ret.push_back({!s1.first, j});
+				// go in a zig-zag fashion until you reach p
+				int k = !s1.first;
+				for(int j = s1.second - 1; j >= 0; j--) {
+					ret.push_back({k, j});
+					ret.push_back({!k, j});
+					k = !k;
+				}
+			} else if(d < 0) {
+				// s is on the left, p is on the right side
+				// go to the left
+				for(int j = s1.second; j >= 0; j--)
+					ret.push_back({s1.first, j});
+				// go up/down and then turn right until s
+				for(int j = 0; j <= s1.second; j++)
+					ret.push_back({!s1.first, j});
+				// go in a zig-zag fashion until you reach p
+				int k = !s1.first;
+				for(int j = s1.second + 1; j < m; j++) {
+					ret.push_back({k, j});
+					ret.push_back({!k, j});
+					k = !k;
+				}
+			} else {
+				// they are on the same side
+				if(!s1.second) {
+					for(int j = 0; j < m; j++)
+						ret.push_back({0, j});
+					for(int j = m - 1; j >= 0; j--)
+						ret.push_back({1, j});
+				} else {
+					for(int j = m - 1; j >= 0; j--)
+						ret.push_back({0, j});
+					for(int j = 0; j < m; j++)
+						ret.push_back({1, j});
+				}
+			}
+
+		} else if(m >= 4) {
+			// connect s and p
+			int d = s1.first - p.first;
+
+			if(d > 0) {
+				// s is below p
+				// go down
+				for(int i = s1.first; i < n; i++) {
+					ret.push_back({i, s1.second});
+				}
+				// then turn left/right
+				// then go upto the s
+				for(int i = m - 1; i >= s1.first; i--) {
+					ret.push_back({i, !s1.second});
+				}
+				// then go in a zig-zag fashion until you reach p
+				int k = !s1.second;
+				for(int i = s1.first - 1; i >= 0; i--) {
+					ret.push_back({i, k});
+					ret.push_back({i, !k});
+					k = !k;
+				}
+			} else if (d < 0) {
+				// s is above p
+				// go up
+				for(int i = s1.first; i >= 0; i--) {
+					ret.push_back({i, s1.second});
+				}
+				// then turn left/right
+				// go downto s
+				for(int i = 0; i <= s1.first; i++) {
+					ret.push_back({i, !s1.second});
+				}
+				// then go in a zig-zag fashion until you reach p
+				int k = !s1.second;
+				for(int i = s1.first + 1; i < n; i++) {
+					ret.push_back({i, k});
+					ret.push_back({i, !k});
+					k = !k;
+				}
+
+			} else {
+				// go to the left/right
+				// then up
+				// then to the right/left
+				if(!s1.first) {
+					// go down
+					for(int i = 0; i < n; i++) {
+						// note that the second coordinate is 0
+						// that's because otherwise s == p
+						// and that's impossible because s and p
+						// have different colours
+						ret.push_back({i, 0});
+					}
+					// go up
+					for(int i = n - 1; i >= 0; i--) {
+						ret.push_back({i, 1});
+					}
+				} else {
+					// go up
+					for(int i = n - 1; i >= 0; i--) {
+						ret.push_back({i, 0});
+					}
+					// go down
+					for(int i = 0; i < n; i++) {
+						ret.push_back({i, 1});
+					}
+				}
+			}
+		} else {
+			return {};
+		}
+
+		return ret;
+
+	}
+
+	std::list<std::pair<int, int>> connect_q_t(std::pair<int, int>&q, std::pair<int, int>& t1, int m, int n) {
+		std::list<std::pair<int, int>> ret;
+
+		if(n >= 4) {
+			int d = t1.second - q.second;
+			ret.push_back({0, 0});
+			auto it = ret.end();
+			std::advance(it, -1);
+			if(d > 0) {
+				// t is on the right, q is on the left side
+				// go to the right
+				for(int j = t1.second; j < m; j++)
+					it = ret.insert(it, {t1.first, j});
+				// go up/down and then turn left until t
+				for(int j = m - 1; j >= t1.second; j--)
+					it = ret.insert(it, {!(t1.first - n + 2) + n - 2, j});
+				// go in a zig-zag fashion until you reach q
+				int k = !(t1.first - n + 2);
+				for(int j = t1.second - 1; j >= 0; j--) {
+					it = ret.insert(it, {k + n - 2, j});
+					it = ret.insert(it, {!k + n - 2, j});
+					k = !k;
+				}
+			} else if(d < 0) {
+				// s is on the left, p is on the right side
+				// go to the left
+				for(int j = t1.second; j >= 0; j--)
+					it = ret.insert(it, {t1.first, j});
+				// go up/down and then turn right until s
+				for(int j = 0; j <= t1.second; j++)
+					it = ret.insert(it, {!(t1.first - n + 2) + n - 2, j});
+				// go in a zig-zag fashion until you reach q
+				int k = !(t1.first - n + 2);
+				for(int j = t1.second + 1; j < m; j++) {
+					it = ret.insert(it, {k + n - 2, j});
+					it = ret.insert(it, {!k + n - 2, j});
+					k = !k;
+				}
+			} else {
+				// they are on the same side
+				if(!t1.second) {
+					for(int j = 0; j < m; j++)
+						it = ret.insert(it, {n - 2, j});
+					for(int j = m - 1; j >= 0; j--)
+						it = ret.insert(it, {n - 1, j});
+				} else {
+					for(int j = m - 1; j >= 0; j--)
+						it = ret.insert(it, {n - 2, j});
+					for(int j = 0; j < m; j++)
+						it = ret.insert(it, {n - 1, j});
+				}
+			}
+			ret.pop_back();
+
+		} else if(m >= 4) {
+			int d = t1.first - q.first;
+			ret.push_back({0, 0});
+			auto it = ret.end();
+			std::advance(it, -1);
+			if(d > 0) {
+				// t is down, q is up
+				// go down
+				for(int i = t1.first; i < n; i++)
+					it = ret.insert(it, {i, t1.second});
+
+				for(int i = n - 1; i >= t1.first; i--)
+					it = ret.insert(it, {i, !(t1.second - m + 2) + m - 2});
+				// go in a zig-zag fashion until you reach q
+				int k = !(t1.second - m + 2);
+				for(int i = t1.first - 1; i >= 0; i--) {
+					it = ret.insert(it, {i, k + m - 2});
+					it = ret.insert(it, {i, !k + m - 2});
+					k = !k;
+				}
+			} else if(d < 0) {
+				// t is up, q is down
+				// go up
+				for(int i = t1.first; i >= 0; i--)
+					it = ret.insert(it, {i, t1.second});
+
+				for(int i = 0; i <= t1.first; i++)
+					it = ret.insert(it, {i, !(t1.second - m + 2) + m - 2});
+				// go in a zig-zag fashion until you reach q
+				int k = !(t1.second - m + 2);
+				for(int i = t1.first + 1; i < n; i++) {
+					it = ret.insert(it, {i, k + m - 2});
+					it = ret.insert(it, {i, !k + m - 2});
+					k = !k;
+				}
+			} else {
+				// they are on the same side
+				if(!q.first) {
+					for(int i = 0; i < n; i++)
+						it = ret.insert(it, {i, m - 2});
+					for(int i = n - 1; i >= 0; i--)
+						it = ret.insert(it, {m - 1, i});
+				} else {
+					for(int i = n - 1; i >= 0; i--)
+						it = ret.insert(it, {i, m - 2});
+					for(int i = 0; i < n; i++)
+						it = ret.insert(it, {i, m - 1});
+				}
+			}
+			ret.pop_back();
+
+		} else {
+			return {};
+		}
+		return ret;
+	}
+
 	std::list<std::pair<int, int>> find_path_m5(std::pair<int, int>& s, std::pair<int, int>& t, peeling &r) {
 
 		std::list<std::pair<int, int>> ret;
@@ -259,51 +499,7 @@ public:
 				std::cout << p << ", " << q << '\n';
 
 				// connect s and p
-				int d = s1.second - p.second;
-				if(d > 0) {
-					// s is on the right, p is on the left side
-					// go to the right
-					for(int j = s1.second; j < m; j++)
-						ret.push_back({s1.first, j});
-					// go up/down and then turn left until s
-					for(int j = m - 1; j >= s1.second; j--)
-						ret.push_back({!s1.first, j});
-					// go in a zig-zag fashion until you reach p
-					int k = !s1.first;
-					for(int j = s1.second - 1; j >= 0; j--) {
-						ret.push_back({k, j});
-						ret.push_back({!k, j});
-						k = !k;
-					}
-				} else if(d < 0) {
-					// s is on the left, p is on the right side
-					// go to the left
-					for(int j = s1.second; j >= 0; j--)
-						ret.push_back({s1.first, j});
-					// go up/down and then turn right until s
-					for(int j = 0; j <= s1.second; j++)
-						ret.push_back({!s1.first, j});
-					// go in a zig-zag fashion until you reach p
-					int k = !s1.first;
-					for(int j = s1.second + 1; j < m; j++) {
-						ret.push_back({k, j});
-						ret.push_back({!k, j});
-						k = !k;
-					}
-				} else {
-					// they are on the same side
-					if(!s1.second) {
-						for(int j = 0; j < m; j++)
-							ret.push_back({0, j});
-						for(int j = m - 1; j >= 0; j--)
-							ret.push_back({1, j});
-					} else {
-						for(int j = m - 1; j >= 0; j--)
-							ret.push_back({0, j});
-						for(int j = 0; j < m; j++)
-							ret.push_back({1, j});
-					}
-				}
+				ret = connect_s_p(s1, p, m, n);
 				// connect p and q
 				// just a zig-zag pattern
 				int k = p.second;
@@ -315,56 +511,9 @@ public:
 
 
 				// connect q and t
+				auto res = connect_q_t(q, t1, m, n);
+				ret.insert(ret.end(), res.begin(), res.end());
 
-				d = t1.second - q.second;
-				ret.push_back({0, 0});
-				auto it = ret.end();
-				std::advance(it, -1);
-				if(d > 0) {
-					// t is on the right, q is on the left side
-					// go to the right
-					for(int j = t1.second; j < m; j++)
-						it = ret.insert(it, {t1.first, j});
-					// go up/down and then turn left until t
-					for(int j = m - 1; j >= t1.second; j--)
-						it = ret.insert(it, {!(t1.first - n + 2) + n - 2, j});
-					// go in a zig-zag fashion until you reach q
-					int k = !(t1.first - n + 2);
-					for(int j = t1.second - 1; j >= 0; j--) {
-						it = ret.insert(it, {k + n - 2, j});
-						it = ret.insert(it, {!k + n - 2, j});
-						k = !k;
-					}
-				} else if(d < 0) {
-					// s is on the left, p is on the right side
-					// go to the left
-					for(int j = t1.second; j >= 0; j--)
-						it = ret.insert(it, {t1.first, j});
-					// go up/down and then turn right until s
-					for(int j = 0; j <= t1.second; j++)
-						it = ret.insert(it, {!(t1.first - n + 2) + n - 2, j});
-					// go in a zig-zag fashion until you reach q
-					int k = !(t1.first - n + 2);
-					for(int j = t1.second + 1; j < m; j++) {
-						it = ret.insert(it, {k + n - 2, j});
-						it = ret.insert(it, {!k + n - 2, j});
-						k = !k;
-					}
-				} else {
-					// they are on the same side
-					if(!t1.second) {
-						for(int j = 0; j < m; j++)
-							it = ret.insert(it, {n - 2, j});
-						for(int j = m - 1; j >= 0; j--)
-							it = ret.insert(it, {n - 1, j});
-					} else {
-						for(int j = m - 1; j >= 0; j--)
-							it = ret.insert(it, {n - 2, j});
-						for(int j = 0; j < m; j++)
-							it = ret.insert(it, {n - 1, j});
-					}
-				}
-				ret.pop_back();
 				return ret;
 
 			} else if(m >= 4) {
@@ -375,74 +524,7 @@ public:
 				std::cout << p << ", " << q << '\n';
 
 				// connect s and p
-				int d = s1.first - p.first;
-
-				if(d > 0) {
-					// s is below p
-					// go down
-					for(int i = s1.first; i < n; i++) {
-						ret.push_back({i, s1.second});
-					}
-					// then turn left/right
-					// then go upto the s
-					for(int i = m - 1; i >= s1.first; i--) {
-						ret.push_back({i, !s1.second});
-					}
-					// then go in a zig-zag fashion until you reach p
-					int k = !s1.second;
-					for(int i = s1.first - 1; i >= 0; i--) {
-						ret.push_back({i, k});
-						ret.push_back({i, !k});
-						k = !k;
-					}
-				} else if (d < 0) {
-					// s is above p
-					// go up
-					for(int i = s1.first; i >= 0; i--) {
-						ret.push_back({i, s1.second});
-					}
-					// then turn left/rigth
-					// go downto s
-					for(int i = 0; i <= s1.first; i++) {
-						ret.push_back({i, !s1.second});
-					}
-					// then go in a zig-zag fashion until you reach p
-					int k = !s1.second;
-					for(int i = s1.first + 1; i < n; i++) {
-						ret.push_back({i, k});
-						ret.push_back({i, !k});
-						k = !k;
-					}
-
-				} else {
-					// go to the left/right
-					// then up
-					// then to the right/left
-					if(!s.first) {
-						// go down
-						for(int i = 0; i < n; i++) {
-							// note that the second coordinate is 0
-							// that's because otherwise s == p
-							// and that's impossible because s and p
-							// have different colours
-							ret.push_back({i, 0});
-						}
-						// go up
-						for(int i = n - 1; i >= 0; i--) {
-							ret.push_back({i, 1});
-						}
-					} else {
-						// go up
-						for(int i = n - 1; i >= 0; i--) {
-							ret.push_back({i, 0});
-						}
-						// go down
-						for(int i = 0; i < n; i++) {
-							ret.push_back({i, 1});
-						}
-					}
-				}
-
+				ret = connect_s_p(s1, p, m, n);
 				// connect p and q
 				// just a zig-zag pattern
 				int k = p.first;
@@ -452,56 +534,8 @@ public:
 					k = std::abs(n - 1 - k);
 				}
 				// connect q and t
-
-				d = t1.first - q.first;
-				ret.push_back({0, 0});
-				auto it = ret.end();
-				std::advance(it, -1);
-				if(d > 0) {
-					// t is down, q is up
-					// go down
-					for(int i = t1.first; i < n; i++)
-						it = ret.insert(it, {i, t1.second});
-
-					for(int i = n - 1; i >= t1.first; i--)
-						it = ret.insert(it, {i, !(t1.second - m + 2) + m - 2});
-					// go in a zig-zag fashion until you reach q
-					int k = !(t1.second - m + 2);
-					for(int i = t1.first - 1; i >= 0; i--) {
-						it = ret.insert(it, {i, k + m - 2});
-						it = ret.insert(it, {i, !k + m - 2});
-						k = !k;
-					}
-				} else if(d < 0) {
-					// t is up, q is down
-					// go up
-					for(int i = t1.first; i >= 0; i--)
-						it = ret.insert(it, {i, t1.second});
-
-					for(int i = 0; i <= t1.first; i++)
-						it = ret.insert(it, {i, !(t1.second - m + 2) + m - 2});
-					// go in a zig-zag fashion until you reach q
-					int k = !(t1.second - m + 2);
-					for(int i = t1.first + 1; i < n; i++) {
-						it = ret.insert(it, {i, k + m - 2});
-						it = ret.insert(it, {i, !k + m - 2});
-						k = !k;
-					}
-				} else {
-					// they are on the same side
-					if(!q.first) {
-						for(int i = 0; i < n; i++)
-							it = ret.insert(it, {i, m - 2});
-						for(int i = n - 1; i >= 0; i--)
-							it = ret.insert(it, {m - 1, i});
-					} else {
-						for(int i = n - 1; i >= 0; i--)
-							it = ret.insert(it, {i, m - 2});
-						for(int i = 0; i < n; i++)
-							it = ret.insert(it, {i, m - 1});
-					}
-				}
-				ret.pop_back();
+				auto res = connect_q_t(q, t1, m, n);
+				ret.insert(ret.end(), res.begin(), res.end());
 				return ret;
 
 			} else {
@@ -582,7 +616,120 @@ public:
 			// connect path and cycle
 
 		} else {
+			std::pair<int, int> s1 = {s.first - r.r1 - 1, s.second - r.r3 - 1};
+			std::pair<int, int> t1 = {t.first - r.r1 - 1, t.second - r.r3 - 1};
 
+			std::cout << "points:";
+			std::cout << s1 << '\n' << t1 << '\n';
+			int n = r.r2 - r.r1;
+			int m = r.r4 - r.r3;
+			std::cout << n << '\n' << m << '\n';
+
+			// trisect M5
+			if(n >= 4) {
+				if(s1.first > t1.first) std::swap(s1, t1);
+				std::pair<int, int> p = {0, (r.r3 <= 0) * 2};
+				std::pair<int, int> q = {n - 1, (r.r3 <= 0) * 2};
+				std::cout << p << ", " << q << '\n';
+
+				ret = this->connect_s_p(s1, p, m, n);
+				for(auto& elem : ret) {
+					elem.first += r.r1 + 1;
+					elem.second += r.r3 + 1;
+				}
+				// connect p and q
+				if(r.r3 <= 0) {
+					// use M2
+					for(int i = 0; i < height; i++) {
+						if(i % 2) {
+							// go from right to left
+							for(int j = width - 1; j >= r.r4 + 1; j--) {
+								ret.push_back({i, j});
+							}
+						} else {
+							for(int j = r.r4 + 1; j < width; j++) {
+								ret.push_back({i, j});
+							}
+						}
+					}
+				} else {
+					// use M1
+					for(int i = 0; i < height; i++) {
+						if(i % 2) {
+							for(int j = r.r3; j >= 0; j--) {
+								ret.push_back({i, j});
+							}
+						} else {
+							for(int j = 0; j <= r.r3; j++) {
+								ret.push_back({i, j});
+							}
+						}
+					}
+				}
+
+				// connect q and t
+				auto res = this->connect_q_t(q, t1, m, n);
+				for(auto& elem : res) {
+					elem.first += r.r1 + 1;
+					elem.second += r.r3 + 1;
+				}
+				ret.insert(ret.end(), res.begin(), res.end());
+
+			} else if(m >= 4) {
+				// perform vertical cut
+				if(s1.second > t1.second) std::swap(s1, t1);
+				// if M3 is empty, we go to M4
+				// thus, if r3 == 0, both p and q are 2
+				// if M3 is not empty, they are 0
+				std::pair<int, int> p = {(r.r1 <= 0) * 2, 0};
+				std::pair<int, int> q = {(r.r1 <= 0) * 2, m - 1};
+				std::cout << p << ", " << q << '\n';
+
+				// connect s and p
+				ret = connect_s_p(s1, p, m, n);
+				// connect p and q via M3 or M4
+				for(auto& elem : ret) {
+					elem.first += r.r1 + 1;
+					elem.second += r.r3 + 1;
+				}
+
+				if(r.r1 <= 0) {
+					// use M4
+					for(int j = r.r3 + 1; j <= r.r4; j++) {
+						if((j - r.r3 - 1) % 2) {
+							for(int i = height - 1; i >= r.r2 + 1; i--) {
+								ret.push_back({i, j});
+							}
+						} else {
+							for(int i = r.r2 + 1; i < height; i++)
+								ret.push_back({i, j});
+						}
+					}
+				} else {
+					// use M3
+					for(int j = r.r3 + 1; j <= r.r4; j++) {
+						if((j - r.r3 - 1) % 2) {
+							for(int i = r.r1; i >= 0; i--)
+								ret.push_back({i, j});
+						} else {
+							for(int i = 0; i <= r.r1; i++)
+								ret.push_back({i, j});
+						}
+					}
+				}
+
+				// connect q and t
+				auto res = connect_q_t(q, t1, m, n);
+				for(auto& elem : res) {
+					elem.first += r.r1 + 1;
+					elem.second += r.r3 + 1;
+				}
+				ret.insert(ret.end(), res.begin(), res.end());
+				return ret;
+
+			} else {
+				return {};
+			}
 
 		}
 
