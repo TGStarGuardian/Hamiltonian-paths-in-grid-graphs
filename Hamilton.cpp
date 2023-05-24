@@ -219,15 +219,17 @@ public:
 		if(n < 4 && m < 4) {
 			return {};
 
-		} else if((!(m % 2) && !(n%2) && (m > 4 || n > 4))
+		} else if((!(m % 2) && !(n % 2) && (m > 4 || n > 4))
 				|| ((m % 2) && (n % 2) && (m > 5 || n > 5))
 				|| (!(m % 2) && (n % 2) && n > 3)
 				|| (!(n % 2) && (m % 2) && m > 3)) {
-			if(n > 4) {
+			if(n > 4 || (!(n % 2) && n > 3)) {
 				// perform horizontal cut
 				if(s1.first > t1.first) std::swap(s1, t1);
 				std::pair<int, int> p = this->find_junction_vertex_top(s1, m);
-				std::pair<int, int> q = this->find_junction_vertex_bottom(t1, m, n);
+				// in case p is on the left, then even --> m - 1, odd --> 0
+				// in case p is on the right, then even --> 0, odd --> m - 1
+				std::pair<int, int> q = {n - 2, !(n % 2)*(!(!(p.second)) * (m - 1)) + (n % 2)*(!(p.second) * (m - 1))};
 				std::cout << p << ", " << q << '\n';
 
 				// connect s and p
@@ -277,7 +279,6 @@ public:
 					}
 				}
 				// connect p and q
-
 				// just a zig-zag pattern
 				int k = p.second;
 				for(int i = p.first + 1; i < q.first; i++) {
@@ -285,10 +286,62 @@ public:
 						ret.push_back({i, std::abs(j - k)});
 					k = std::abs(m - 1 - k);
 				}
-				return ret;
+
+
 				// connect q and t
 
-			} else if(m > 4) {
+				d = t1.second - q.second;
+				ret.push_back({0, 0});
+				auto it = ret.end();
+				std::advance(it, -1);
+				if(d > 0) {
+					// t is on the right, q is on the left side
+					// go to the right
+					for(int j = t1.second; j < m; j++)
+						it = ret.insert(it, {t1.first, j});
+					// go up/down and then turn left until t
+					for(int j = m - 1; j >= t1.second; j--)
+						it = ret.insert(it, {!(t1.first - n + 2) + n - 2, j});
+					// go in a zig-zag fashion until you reach q
+					int k = !(t1.first - n + 2);
+					for(int j = t1.second - 1; j >= 0; j--) {
+						it = ret.insert(it, {k + n - 2, j});
+						it = ret.insert(it, {!k + n - 2, j});
+						k = !k;
+					}
+				} else if(d < 0) {
+					// s is on the left, p is on the right side
+					// go to the left
+					for(int j = t1.second; j >= 0; j--)
+						it = ret.insert(it, {t1.first, j});
+					// go up/down and then turn right until s
+					for(int j = 0; j <= t1.second; j++)
+						it = ret.insert(it, {!(t1.first - n + 2) + n - 2, j});
+					// go in a zig-zag fashion until you reach q
+					int k = !(t1.first - n + 2);
+					for(int j = t1.second + 1; j < m; j++) {
+						it = ret.insert(it, {k + n - 2, j});
+						it = ret.insert(it, {!k + n - 2, j});
+						k = !k;
+					}
+				} else {
+					// they are on the same side
+					if(!t1.second) {
+						for(int j = 0; j < m; j++)
+							it = ret.insert(it, {n - 2, j});
+						for(int j = m - 1; j >= 0; j--)
+							it = ret.insert(it, {n - 1, j});
+					} else {
+						for(int j = m - 1; j >= 0; j--)
+							it = ret.insert(it, {n - 2, j});
+						for(int j = 0; j < m; j++)
+							it = ret.insert(it, {n - 1, j});
+					}
+				}
+				ret.pop_back();
+				return ret;
+
+			} else if(m > 4 || (!(m % 2) && m > 3)) {
 				// perform vertical cut
 				if(s1.second > t1.second) std::swap(s1, t1);
 				std::pair<int, int> p = this->find_junction_vertex_left(s1, n);
@@ -373,40 +426,6 @@ public:
 					k = std::abs(n - 1 - k);
 				}
 				return ret;
-				// connect q and t
-
-			} else {
-				return {};
-			}
-		} else if((m % 2) && (n % 2)) {
-			if(n > 5) {
-				// perform horizontal cut
-				if(s1.first > t1.first) std::swap(s1, t1);
-				std::pair<int, int> p = this->find_junction_vertex_top(s1, m);
-				std::pair<int, int> q = this->find_junction_vertex_bottom(t1, m, n);
-				std::cout << p << ", " << q << '\n';
-
-				// connect s and p
-
-
-				// connect p and q
-
-
-				// connect q and t
-
-			} else if (m > 5) {
-				// perform vertical cut
-				if(s1.second > t1.second) std::swap(s1, t1);
-				std::pair<int, int> p = this->find_junction_vertex_left(s1, n);
-				std::pair<int, int> q = this->find_junction_vertex_right(t1, m, n);
-				std::cout << p << ", " << q << '\n';
-
-				// connect s and p
-
-
-				// connect p and q
-
-
 				// connect q and t
 
 			} else {
@@ -592,6 +611,7 @@ int main() {
 
 	auto path = G.find_path_m5(s, t);
 
+	std::cout << "The path in M5 is:\n";
 	for(const auto& l : path) {
 			std::cout << '(' << l.first << ", " << l.second << ")\n";
 	}
