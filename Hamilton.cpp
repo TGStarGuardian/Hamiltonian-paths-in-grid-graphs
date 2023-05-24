@@ -222,8 +222,10 @@ public:
 		} else if((!(m % 2) && !(n % 2) && (m > 4 || n > 4))
 				|| ((m % 2) && (n % 2) && (m > 5 || n > 5))
 				|| (!(m % 2) && (n % 2) && n > 3)
-				|| (!(n % 2) && (m % 2) && m > 3)) {
-			if(n > 4 || (!(n % 2) && n > 3)) {
+				|| (!(n % 2) && (m % 2) && m > 3)
+				|| (n == 3 && m >= 4 && !(s.second <= t.second? (s.first + s.second) % 2 : (t.first + t.second) % 2))
+				|| (m == 3 && n >= 4 && !(s.first <= t.first? (s.first + s.second) % 2 : (t.first + t.second) % 2))) {
+			if(n >= 4) {
 				// perform horizontal cut
 				if(s1.first > t1.first) std::swap(s1, t1);
 				std::pair<int, int> p = this->find_junction_vertex_top(s1, m);
@@ -341,7 +343,7 @@ public:
 				ret.pop_back();
 				return ret;
 
-			} else if(m > 4 || (!(m % 2) && m > 3)) {
+			} else if(m >= 4) {
 				// perform vertical cut
 				if(s1.second > t1.second) std::swap(s1, t1);
 				std::pair<int, int> p = this->find_junction_vertex_left(s1, n);
@@ -425,8 +427,58 @@ public:
 						ret.push_back({std::abs(i - k), j});
 					k = std::abs(n - 1 - k);
 				}
-				return ret;
 				// connect q and t
+
+				d = t1.first - q.first;
+				ret.push_back({0, 0});
+				auto it = ret.end();
+				std::advance(it, -1);
+				if(d > 0) {
+					// t is on the right, q is on the left side
+					// go to the right
+					for(int i = t1.first; i < n; i++)
+						it = ret.insert(it, {i, t1.second});
+					// go up/down and then turn left until t
+					for(int i = n - 1; i >= t1.first; i--)
+						it = ret.insert(it, {i, !(t1.second - m + 2) + m - 2});
+					// go in a zig-zag fashion until you reach q
+					int k = !(t1.second - m + 2);
+					for(int i = t1.first - 1; i >= 0; i--) {
+						it = ret.insert(it, {i, k + m - 2});
+						it = ret.insert(it, {i, !k + m - 2});
+						k = !k;
+					}
+				} else if(d < 0) {
+					// s is on the left, p is on the right side
+					// go to the left
+					for(int i = t1.first; i >= 0; i--)
+						it = ret.insert(it, {i, t1.second});
+					// go up/down and then turn right until s
+					for(int i = 0; i <= t1.first; i++)
+						it = ret.insert(it, {i, !(t.second - m + 2) + m - 2});
+					// go in a zig-zag fashion until you reach q
+					int k = !(t1.second - m + 2);
+					for(int i = t1.first + 1; i < n; i++) {
+						it = ret.insert(it, {i, k + n - 2});
+						it = ret.insert(it, {i, !k + n - 2});
+						k = !k;
+					}
+				} else {
+					// they are on the same side
+					if(!t1.first) {
+						for(int i = 0; i < n; i++)
+							it = ret.insert(it, {i, m - 2});
+						for(int i = n - 1; i >= 0; i--)
+							it = ret.insert(it, {m - 1, i});
+					} else {
+						for(int i = n - 1; i >= 0; i--)
+							it = ret.insert(it, {i, m - 2});
+						for(int i = 0; i < n; i++)
+							it = ret.insert(it, {i, m - 1});
+					}
+				}
+				ret.pop_back();
+				return ret;
 
 			} else {
 				return {};
