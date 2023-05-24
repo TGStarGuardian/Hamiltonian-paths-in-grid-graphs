@@ -216,7 +216,32 @@ public:
 		if(!has_hamiltonian_path(s1, t1, m, n)) return {};
 
 		if(n < 4 && m < 4) {
-			return {};
+			switch(n) {
+			case 1:
+				switch(m) {
+				case 1: return {s1};
+				case 2: return {s1, {0, !s1.second}};
+				case 3: return {s1, {0, 1}, {0, !s1.second * 2}};
+				}
+				break;
+			case 2:
+				switch(m) {
+				case 1: return {s1};
+				case 2:
+				case 3:
+					return {};
+				}
+				break;
+			case 3:
+				switch(m) {
+				case 1:
+				case 2:
+				case 3:
+					return {};
+				}
+				break;
+			}
+			return ret;
 
 		} else if((!(m % 2) && !(n % 2) && (m > 4 || n > 4))
 				|| ((m % 2) && (n % 2) && (m > 5 || n > 5))
@@ -346,7 +371,7 @@ public:
 				// perform vertical cut
 				if(s1.second > t1.second) std::swap(s1, t1);
 				std::pair<int, int> p = this->find_junction_vertex_left(s1, n);
-				std::pair<int, int> q = this->find_junction_vertex_right(t1, m, n);
+				std::pair<int, int> q = {!(m % 2)*(!(!(p.first)) * (n - 1)) + (m % 2)*(!(p.first) * (n - 1)), m - 2};
 				std::cout << p << ", " << q << '\n';
 
 				// connect s and p
@@ -390,9 +415,9 @@ public:
 					}
 
 				} else {
-					// go to the top/bottom
-					// then right
-					// then to the bottom/top
+					// go to the left/right
+					// then up
+					// then to the right/left
 					if(!s.first) {
 						// go down
 						for(int i = 0; i < n; i++) {
@@ -433,11 +458,11 @@ public:
 				auto it = ret.end();
 				std::advance(it, -1);
 				if(d > 0) {
-					// t is on the right, q is on the left side
-					// go to the right
+					// t is down, q is up
+					// go down
 					for(int i = t1.first; i < n; i++)
 						it = ret.insert(it, {i, t1.second});
-					// go up/down and then turn left until t
+
 					for(int i = n - 1; i >= t1.first; i--)
 						it = ret.insert(it, {i, !(t1.second - m + 2) + m - 2});
 					// go in a zig-zag fashion until you reach q
@@ -448,23 +473,23 @@ public:
 						k = !k;
 					}
 				} else if(d < 0) {
-					// s is on the left, p is on the right side
-					// go to the left
+					// t is up, q is down
+					// go up
 					for(int i = t1.first; i >= 0; i--)
 						it = ret.insert(it, {i, t1.second});
-					// go up/down and then turn right until s
+
 					for(int i = 0; i <= t1.first; i++)
-						it = ret.insert(it, {i, !(t.second - m + 2) + m - 2});
+						it = ret.insert(it, {i, !(t1.second - m + 2) + m - 2});
 					// go in a zig-zag fashion until you reach q
 					int k = !(t1.second - m + 2);
 					for(int i = t1.first + 1; i < n; i++) {
-						it = ret.insert(it, {i, k + n - 2});
-						it = ret.insert(it, {i, !k + n - 2});
+						it = ret.insert(it, {i, k + m - 2});
+						it = ret.insert(it, {i, !k + m - 2});
 						k = !k;
 					}
 				} else {
 					// they are on the same side
-					if(!t1.first) {
+					if(!q.first) {
 						for(int i = 0; i < n; i++)
 							it = ret.insert(it, {i, m - 2});
 						for(int i = n - 1; i >= 0; i--)
@@ -483,6 +508,7 @@ public:
 				return {};
 			}
 		} else {
+			// 3x4 or 4x3 case
 			return {};
 		}
 
@@ -498,44 +524,53 @@ public:
 
 		std::list<std::pair<int, int>> ret = find_path_m5(s, t, r);
 
-		if(ret.empty()) {
+		if(!ret.empty()
+				|| (r.r2 - r.r1 == 1 && !(height == 5 && s.first == 3 && t.first == 3))
+				|| (r.r4 - r.r3 == 1 && !(width == 5 && s.second == 3 && t.second == 3))
+				|| (r.r2 - r.r1 == 2)
+				|| (r.r4 - r.r3 == 2)) {
 
-			if(r.r2 - r.r1 == 1) {
-				if(height == 5 && s.first == 3 && t.first == 3) {
-
-				} else {
+			if(ret.empty()) {
+				if(r.r2 - r.r1 == 1) {
 					if(r.r1 >= 2)
 						r.r1--;
 					else
 						r.r2++;
-
-					ret = find_path_m5(s, t, r);
-
-					// etc etc etc
-				}
-			} else if(r.r4 - r.r3 == 1) {
-				if(width == 5 && s.second == 3 && t.second == 3) {
-
-				} else {
+				} else if(r.r4 - r.r3 == 1) {
 					if(r.r3 >= 2)
 						r.r3--;
 					else
 						r.r4++;
-					ret = find_path_m5(s, t, r);
+				} else if(r.r2 - r.r1 == 2) {
+					// then it's a 2xm matrix
+					// all we need to do is lend either the left or the right column
+					if(std::min(s.second, t.second) > 0 && r.r3 > 0) {
+						// lend the left column if M1 is not empty
+						r.r3++;
+					} else {
+						// lend the right column
+						r.r4--;
+					}
+				} else if(r.r4 - r.r3 == 2) {
+					// then it's a nx2 matrix
+					// all we need to do is lend either the top or the bottom row
+					if(std::min(s.first, t.first) > 0 && r.r1 > 0) {
+						// lend the top row if M3 is not empty
+						r.r1++;
+					} else {
+						r.r2--;
+					}
 				}
 
-			} else if(r.r2 - r.r1 == 2) {
-
-
-			} else if(r.r4 - r.r3 == 2) {
-
-
-			} else {
-
+				ret = find_path_m5(s, t, r);
 
 			}
 
-		} else {
+			for(auto& elem : ret) {
+				elem.first += r.r1 + 1;
+				elem.second += r.r3 + 1;
+			}
+
 			auto m1 = find_hamiltonian_cycle(true, r.r3 + 1, height);
 			auto m2 = find_hamiltonian_cycle(false, width - 1 - r.r4, height);
 			auto m3 = find_hamiltonian_cycle(true, r.r4 - r.r3, r.r1 + 1);
@@ -545,6 +580,9 @@ public:
 
 
 			// connect path and cycle
+
+		} else {
+
 
 		}
 
@@ -727,6 +765,8 @@ int main() {
 	for(const auto& l : path) {
 			std::cout << '(' << l.first << ", " << l.second << ")\n";
 	}
+
+	std::cout << "The path ends\n";
 
 	path = G.find_path_m5(s, t, p);
 	std::cout << "The path in M5 is:\n";
