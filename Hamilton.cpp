@@ -5,6 +5,7 @@
 #include <list>
 #include <algorithm>
 #include <iterator>
+#include <chrono>
 
 template<typename T>
 inline void print(T& x, std::string&& name) {
@@ -860,7 +861,10 @@ public:
 	}
 
 	std::pair<int, int> H_C_M1_M3_CCW(int m, int n, int x, int y) {
-		if((n % 2) && (m % 2)) return {};
+		// leva ili gornja strana ce biti konkavne
+		// desna mora biti ravna zbog M1
+		// donja mora biti ravna zbog M3
+		if((n % 2) && (m % 2)) return {-1 , -1};
 
 		if(!(n % 2)) {
 			// za y parno, idemo levo
@@ -1107,15 +1111,18 @@ int main() {
 		std::cout << '\n';
 	}
 
+	auto start = std::chrono::high_resolution_clock::now();
+
 	std::pair<int, int> T = {0, 0};
-	for(int y = 0; y < 4; y++) {
-		for(int x = 0; x < 5; x++) {
-			T = G.H_C_M1_M3_CCW(5, 4, T.second, T.first);
+	for(int y = 0; y < 100000; y++) {
+		for(int x = 0; x < 100000; x++) {
+			T = G.H_C_M1_M3_CCW(100000, 100000, T.second, T.first);
 		}
 	}
-
+	auto stop = std::chrono::high_resolution_clock::now();
 	std::cout << T << '\n';
-
+	auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
+	std::cout << duration.count() << '\n';
 
 	return 0;
 }
