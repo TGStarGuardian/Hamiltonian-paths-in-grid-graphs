@@ -858,6 +858,62 @@ public:
 
 		return ret;
 	}
+
+	std::pair<int, int> H_C_M1_M3_CCW(int m, int n, int x, int y) {
+		if((n % 2) && (m % 2)) return {};
+
+		if(!(n % 2)) {
+			// za y parno, idemo levo
+			// za y neparno, idemo desno
+			// na koloni m-1 idemo gore
+
+			if(y % 2) {
+				// idemo desno za x < m - 2
+				// za x == m - 2, spustamo se dole ako nije y == n - 1
+				// ako je x == m - 2 i y == n - 1, onda idemo desno
+				// za x == m - 1, idemo na gore
+				return {y + (x == m - 2 && y < n - 1) - (x == m - 1), x + (x < m - 2) + (x == m - 2 && y == n - 1)};
+			} else {
+				// idemo levo za x > 0 i x < m - 1
+				// x > 0 <-> !(!x) == 1 && x >= 0
+				// za x == 0, spustamo se dole, osim kada je y == n - 1 (tada idemo desno)
+				// za x == m - 1 idemo na gore kada nije y == 0
+				// za x == m - 1 i y == 0 idemo levo
+				return {y + (!x && y < n - 1) - (x == m - 1 && !(!y)), x - ((!(!x) && x < m - 1) || (!y && x == m - 1)) + (!x && y == n - 1)};
+
+			}
+
+
+		} else {
+			// od donjeg desnog ugla na gore, pa cik-cak po kolonama na levo
+			// za x neparno, idemo na gore
+			// za parno x, idemo na dole
+			// pazimo na y == 0, y == n - 2 i y == n - 1
+			if(x % 2) {
+				// za y == 0, skrecemo levo (x - 1, y)
+				// za y == n - 1 idemo desno (x + 1, y), osim za x == m - 1 (tada idemo gore)
+				// inace idemo samo gore (x, y - 1)
+				// x koordinatu resava funkcija (x - 1)*!y + (x + 1)*(y == n - 1 && x != m - 1) + x*(y > 0 && y < n - 1) + x*(y == n - 1 && x == m - 1)
+				// imamo x - !y + (y == n - 1 && x != m - 1)
+				// ako ubacimo y == 0, imamo x - 1 + 0 = x - 1
+				// y == n - 1, dobijamo x - 0 + 1 = x + 1
+				// a inace x - 0 + 0 = x
+				return {y - (!(!y) && y < n - 1) - (y == n - 1 && x == m - 1), x - !y + (y == n - 1 && x != m - 1)};
+
+			} else {
+				// za y < n - 2, idemo dole (x, y + 1)
+				// za y == n - 2, idemo levo za x > 0 (x - 1, y), a inace na dole
+				// za y == n - 1, idemo desno (x + 1, y)
+				// x koordinata: x - (y == n - 2) + (y == n - 1)
+				// y koordinata: y + (y > 0 && y < n - 2)
+				return {y + (y < n - 2) + (!x && y == n - 2), x - (y == n - 2 && !(!x)) + (y == n - 1)};
+			}
+
+
+		}
+
+	}
+
 private:
 	std::vector<std::vector<T>> graph;
 	bool size_parity; // true when size is odd
@@ -1038,10 +1094,27 @@ int main() {
 
 	path = G.find_path_m5(s, t, p);
 	std::cout << "The path in M5 is:\n";
-		for(const auto& l : path) {
-				std::cout << '(' << l.first << ", " << l.second << ")\n";
-		}
+	for(const auto& l : path) {
+		std::cout << '(' << l.first << ", " << l.second << ")\n";
+	}
 
+
+	std::cout << "HCM13\n";
+	for(int y = 0; y < 4; y++) {
+		for(int x = 0; x < 5; x++) {
+			std::cout << G.H_C_M1_M3_CCW(5, 4, x, y) << " ";
+		}
+		std::cout << '\n';
+	}
+
+	std::pair<int, int> T = {0, 0};
+	for(int y = 0; y < 4; y++) {
+		for(int x = 0; x < 5; x++) {
+			T = G.H_C_M1_M3_CCW(5, 4, T.second, T.first);
+		}
+	}
+
+	std::cout << T << '\n';
 
 
 	return 0;
