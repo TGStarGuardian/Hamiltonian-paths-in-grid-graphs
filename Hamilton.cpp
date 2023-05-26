@@ -3,6 +3,8 @@
 #include <vector>
 #include <cstdlib>
 #include <list>
+#include <algorithm>
+#include <iterator>
 
 template<typename T>
 inline void print(T& x, std::string&& name) {
@@ -10,7 +12,7 @@ inline void print(T& x, std::string&& name) {
 }
 
 template<typename T>
-std::ostream& operator<<(std::ostream& os, std::pair<T, T>& p) {
+std::ostream& operator<<(std::ostream& os, const std::pair<T, T>& p) {
 	os << '(' << p.first << ", " << p.second << ')';
 	return os;
 }
@@ -31,6 +33,8 @@ inline bool connected_by_non_boundary_edge(std::pair<int, int>& s, std::pair<int
 template<typename T>
 class Mesh {
 public:
+
+	enum mesh {M1, M2, M3, M4};
 
 	typedef struct peeling {
 		int r1, r2, r3, r4;
@@ -131,29 +135,47 @@ public:
 				;
 	}
 
-	std::list<std::pair<int, int>> find_hamiltonian_cycle(bool t, int width, int height) {
+	std::list<std::pair<int, int>> find_hamiltonian_cycle(enum mesh t, int width, int height) {
 
 		if(!has_hamiltonian_cycle(width, height)) return {};
 
 		std::list<std::pair<int, int>> ret;
-		if(t) {
-			if(!(height % 2)) {
-				// left face is concave
+
+		switch(t) {
+		case M1:
+			if(!height % 2)
+				// left face is concave, the orientation is -->
 				hamiltonian_cycle_top(ret, width, height);
-			} else {
-				// bottom face is concave
+			else
+				// top face is concave, the orientation is <--
+				hamiltonian_cycle_right(ret, width, height);
+			break;
+		case M2:
+			if(!height % 2)
+				// right face is concave, the orientation is <--
+				hamiltonian_cycle_bottom(ret, width, height);
+			else
+				// bottom face is concave, the orientation is <--
 				hamiltonian_cycle_left(ret, width, height);
-			}
+			break;
+		case M3:
+			if(!height % 2)
+				// right face is concave, the orientation is <--
+				hamiltonian_cycle_bottom(ret, width, height);
+			else
+				// top face is concave, the orientation is <--
+				hamiltonian_cycle_right(ret, width, height);
+			break;
+		case M4:
+			if(!height % 2)
+				// right face is concave, the orientation is <--
+				hamiltonian_cycle_bottom(ret, width, height);
+			else
+				// bottom face is concave, the orientation is <--
+				hamiltonian_cycle_left(ret, width, height);
+			break;
+
 		}
-			else {
-				if(!(height % 2)) {
-					// right face is concave
-					hamiltonian_cycle_bottom(ret, width, height);
-				} else {
-					// bottom face is concave
-					hamiltonian_cycle_right(ret, width, height);
-				}
-			}
 
 		return ret;
 	}
@@ -604,14 +626,115 @@ public:
 				elem.first += r.r1 + 1;
 				elem.second += r.r3 + 1;
 			}
-
-			auto m1 = find_hamiltonian_cycle(true, r.r3 + 1, height);
-			auto m2 = find_hamiltonian_cycle(false, width - 1 - r.r4, height);
-			auto m3 = find_hamiltonian_cycle(true, r.r4 - r.r3, r.r1 + 1);
-			auto m4 = find_hamiltonian_cycle(false, r.r4 - r.r3, height - 1 - r.r2);
+			// right should be flat
+			auto m1 = find_hamiltonian_cycle(M1, r.r3 + 1, height);
+			// left should be flat
+			auto m2 = find_hamiltonian_cycle(M2, width - 1 - r.r4, height);
+			// bottom should be flat
+			auto m3 = find_hamiltonian_cycle(M3, r.r4 - r.r3, r.r1 + 1);
+			// top should be flat
+			auto m4 = find_hamiltonian_cycle(M4, r.r4 - r.r3, height - 1 - r.r2);
 
 			// connect cycles
+			// M1 --> M3
+			if(!m3.empty()) {
+				// we connect M1's (0, m-1) to M3's (0, 0)
+				// if (0, m-1) is followed by (1, m-1)
+				// there are two cases:
+				// 1) (0, 0) is followed by (0, 1) in M3
+				// just append all elements of M3 to M1 after the element (0, m-1)
+				// 2) (0, 0) is followed by (1, 0) in M3
+				// so, M3 ends in (1, 0)
+				// in that case, we just iterate over M3 backwards
 
+				// if (0, m-1) is not followed by (1, m-1)
+				// then connect (1, m-1) to (1, 0) in M3
+
+				// find (0, 0) in M3
+				// find the successor of (0, 0)
+				// so, in case (0, 0) is at the end of the list
+				// its successor is m3.begin()
+
+				auto m1_it = std::find_if(m1.begin(), m1.end(), [r](const std::pair<int, int>& p){return !p.first && p.second == r.r3;});
+				++m1_it;
+
+				if(m1_it->first != 1) {
+					--m1_it;
+					// connect (1, m-1) to (1, 0) (in M3)
+					auto it = std::find_if(m3.begin(), m3.end(), [](const std::pair<int, int>&p){return p.first == 1 && !p.second;});
+					auto next = ++it;
+					--it;
+					std::cout << *it << ", " << *next << '\n';
+					if(next == m3.end()) next = m3.begin();
+					// if (0, 0) goes after (1, 0), we trace the M3 backwards
+					if(!(!(*next).first) && !(!(*next).second)) {
+						auto I = std::reverse_iterator(it);
+						for( ; I != m3.rend(); I++) {
+							(*I).second += r.r3 + 1;
+							m1_it = m1.insert(m1_it, *I);
+						}
+						for(I = m3.rbegin(); I != std::reverse_iterator(it); I++) {
+							(*I).second += r.r3 + 1;
+							m1_it = m1.insert(m1_it, *I);
+						}
+					} else {
+						for(auto I = it; I != m3.end(); I++) {
+							(*I).second += r.r3 + 1;
+							m1.insert(m1_it, *I);
+						}
+						for(auto I = m3.begin(); I != it; I++) {
+							(*I).second += r.r3 + 1;
+							m1.insert(m1_it, *I);
+						}
+					}
+
+				} else {
+					auto it = std::find_if(m3.begin(), m3.end(), [](const std::pair<int, int>& p){return !p.first && !p.second;});
+					auto next = ++it;
+					--it;
+					if(next == m3.end()) {
+						next = m3.begin();
+					}
+					if(!(!(*next).first) && !(*next).second) {
+						// case 2 - we iterate backwards over M3 starting from (0, 0)
+						auto I = std::reverse_iterator(it);
+						for( ; I != m3.rend(); I++) {
+							(*I).second += r.r3 + 1;
+							m1_it = m1.insert(m1_it, *I);
+						}
+						for(I = m3.rbegin(); I != std::reverse_iterator(it); I++) {
+							(*I).second += r.r3 + 1;
+							m1_it = m1.insert(m1_it, *I);
+						}
+					} else {
+						// case 1
+						for(auto I = it; I != m3.end(); I++) {
+							(*I).second += r.r3 + 1;
+							m1.insert(m1_it, *I);
+						}
+						for(auto I = m3.begin(); I != it; I++) {
+							(*I).second += r.r3 + 1;
+							m1.insert(m1_it, *I);
+						}
+					}
+				}
+
+			}
+
+			std::cout << "begin M1\n";
+			for(const auto& elem : m1)
+				std::cout << elem << '\n';
+			std::cout << "end M1\n";
+
+			// M1 and M3 --> M2
+			if(!m2.empty()) {
+
+			}
+
+			// M1 and M2 and M3 --> M4
+			if(!m4.empty()) {
+
+			}
 
 			// connect path and cycle
 
@@ -818,30 +941,28 @@ private:
 	}
 
 	void hamiltonian_cycle_right(std::list<std::pair<int, int>>& ret, int width, int height) {
-		// t == false --> only the top face is concave
-		// go all the way to the right
-		for(int i = 0; i <= height - 1; i++) {
+		// top should be concave
+		// so, we go bottom-up from the right corner
+		for(int i = height - 1; i >= 0; i--)
 			ret.push_back({i, width - 1});
-		}
-		// go in a serpentine fashion to the top
+		// we then go from right to left in a zig-zag fashion
 		for(int j = width - 2; j >= 0; j--) {
-			if (!((j + width) % 2)) {
-				// for even i + _height, we go to the left
-				for(int i = height - 1; i >= 1; i--) {
+			// width - 1, width - 3, ... --> up
+			// width - 2, width - 4, ... --> down
+			// width - 1 - j...when j = width - 2, it is 1
+			// so, odd width - 1 - j means down
+			// even j means up
+			if((width - 1 - j) % 2) {
+				for(int i = 0; i < height - 1; i++)
 					ret.push_back({i, j});
-				}
 			} else {
-				// for odd i + _height, we go to the right
-				for(int i = 1; i <= height - 1; i++) {
+				for(int i = height - 2; i >= 0; i--)
 					ret.push_back({i, j});
-				}
 			}
 		}
-
-		// and finally we add a cap to the left
-		for(int j = 0; j <= width - 2; j++) {
-			ret.push_back({0, j});
-		}
+		// then, we turn right and cover the bottom face
+		for(int j = 0; j < width - 1; j++)
+			ret.push_back({height - 1, j});
 	}
 
 };
@@ -898,7 +1019,7 @@ int main() {
 	std::cout << G.has_hamiltonian_path(s, t, G.get_width(), G.get_height()) << '\n';
 	std::cout << G.has_hamiltonian_cycle(G.get_width(), G.get_height()) << '\n';
 
-	std::list<std::pair<int, int>> cycle = G.find_hamiltonian_cycle(true, G.get_width(), G.get_height());
+	std::list<std::pair<int, int>> cycle = G.find_hamiltonian_cycle(Mesh<int>::mesh::M1, 4, 10);
 	for(const auto& l : cycle) {
 		std::cout << '(' << l.first << ", " << l.second << ")\n";
 	}
