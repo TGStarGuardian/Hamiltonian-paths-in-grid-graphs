@@ -1,5 +1,6 @@
 #include <iostream>
 #include <vector>
+#include <chrono>
 
 
 std::istream& operator>>(std::istream& is, std::pair<int, int>& p) {
@@ -26,14 +27,14 @@ std::pair<int, int> operator*(int a, const std::pair<int, int>& x) {
 	return {a * x.first, a * x.second};
 }
 
-std::pair<int, int> path_2_m(int m, int n, int x, int y, std::pair<int, int>& s, std::pair<int, int>& t) {
+std::pair<int, int> path_2_m(int m, int n, int x, int y, const std::pair<int, int>& s, const std::pair<int, int>& t) {
 	if(s.second < t.second) {
 		// od s idemo skroz levo
 		// onda menjamo traku, pa se vracamo desno do s
 		// onda cik-cak nadesno do ispod/iznad t
 		// pa skroz desno
 		// pa menjamo traku i onda levo do t
-		/*
+		
 		if(x > 0 && x <= s.second) {
 			if(y == s.first) return {y, x - 1};
 			else return {y, x + 1};
@@ -68,7 +69,7 @@ std::pair<int, int> path_2_m(int m, int n, int x, int y, std::pair<int, int>& s,
 			if(y == t.first) return {y, x - 1};
 			else return {1 - y, x};
 		}
-		*/
+		
 		// y, 1 - y ili -1
 		// 1 - y: (!x && y == s.first) || (x > s.second && x < t.second - 1 && (((x - s.second) % 2) ^ (y != s.first)))
 		// || (x == t.second - 1 && y == t.first) || (x == m - 1 && y != t.first)
@@ -82,6 +83,7 @@ std::pair<int, int> path_2_m(int m, int n, int x, int y, std::pair<int, int>& s,
 		// || (x == t.second - 1 && y == t.first) || (x == m - 1 && y != t.first)
 		// x - 1: (x > 0 && x <= s.second && y == s.first) || (x > t.second && x < m - 1 && y == t.first) || (x == m - 1 && y == t.first)
 		// Fx - A + B(x - 1) + (!F && !A && !B)(x + 1)
+		/*
 		bool Fy =  (!x && y == s.first) || (x > s.second && x < t.second - 1 && (((x - s.second) % 2) ^ (y != s.first)))
 		|| (x == t.second - 1 && y == t.first) || (x == m - 1 && y != t.first);
 		bool A = (x == t.second && y == t.first);
@@ -89,7 +91,7 @@ std::pair<int, int> path_2_m(int m, int n, int x, int y, std::pair<int, int>& s,
 		|| (x == t.second - 1 && y == t.first) || (x == m - 1 && y != t.first);
 		bool Bx = (x > 0 && x <= s.second && y == s.first) || (x > t.second && x < m - 1 && y == t.first) || (x == m - 1 && y == t.first);
 		return {Fy*(1 - y) - A + (!Fy && !A)*y , Fx*x - A + Bx*(x - 1) + (!Fx && !A && !Bx)*(x + 1)};
-
+		*/
 	} else if(s.second > t.second) {
 		// od s idemo desno
 		// pa menjamo traku i vracamo se levo do s
@@ -164,10 +166,16 @@ std::pair<int, int> path_2_m(int m, int n, int x, int y, std::pair<int, int>& s,
 		} else {
 			return {-1, -1};
 		}
-	
 	}
 }
 
+std::pair<int, int> path_n_2(int m, int n, int x, int y, const std::pair<int, int>& s, const std::pair<int, int>& t) {
+	// ako zamenimo mesta x i y, m i n i okrenemo koordinate s i t, dobijamo slucaj 2xm
+	std::pair<int, int> s1 = {s.second, s.first};
+	std::pair<int, int> t1 = {t.second, t.first};
+	auto p = path_2_m(n, m, y, x, s1, t1);
+	return {p.second, p.first};
+}
 
 
 int main() {
@@ -179,13 +187,19 @@ int main() {
 	std::cout << "Unesi t: ";
 	std::cin >> t;
 	
+	std::pair<int, int> x = s;
+	auto start = std::chrono::high_resolution_clock::now();
 	for(int i = 0; i < 2; i++) {
-		for(int j = 0; j < 8; j++) {
-			std::cout << path_2_m(8, 2, j, i, s, t) << " ";
+		for(int j = 0; j < 1000000; j++) {
+			x = path_n_2(2, 1000000, x.second, x.first, s, t);
+			// std::cout << x << '\n';
 		}
-		std::cout << '\n';
 	}
-
-
+	auto stop = std::chrono::high_resolution_clock::now();
+	auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
+	std::cout << duration.count() << '\n';
+	std::cout << x << '\n';
+	
+	
 	return 0;
 }
