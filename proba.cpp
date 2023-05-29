@@ -411,17 +411,17 @@ std::pair<int, int> hamiltonian_path_util(int m, int n, int x, int y, std::pair<
 				// ako postoji bar jedan, onda M1 se veze za taj i za M2
 				if(r.r2 - r.r1 == n) {
 					// vezujemo za M2
-					// donji desni je na (r2, r4 + r.r3)
-					// ako je njemu sledeci (r2 - 1, r4), vezemo se
+					// donji desni je na (r2, r.r4 - r.r3 - 1)
+					// ako je njemu sledeci (r2 - 1, r.r4 - r.r3 - 1), vezemo se
 					// orijentacija je CCW
-					if(y1 == r.r2 && x1 == r.r4 && ret.first == r.r2 - 1 && ret.second == r.r4) {
+					if(y1 == r.r2 && x1 == r.r4 - r.r3 - 1 && ret.first == r.r2 - 1 && ret.second == r.r4 - r.r3 - 1) {
 						return {y, x + 1};
 					}
 					
-					// ako je tacki (r2 - 1, r4) sledeca (r2, r4), vezemo se
+					// ako je tacki (r2 - 1, r.r4 - r.r3 - 1) sledeca (r2, r.r4 - r.r3 - 1), vezemo se
 					// orijentacija je CW
 					
-					if(y1 == r.r2 - 1 && x1 == r.r4 && ret.first == r.r2 && ret.second == r.r4) {
+					if(y1 == r.r2 - 1 && x1 == r.r4 - r.r3 - 1 && ret.first == r.r2 && ret.second == r.r4 - r.r3 - 1) {
 						return {y, x + 1};
 					}
 				}
@@ -441,16 +441,16 @@ std::pair<int, int> hamiltonian_path_util(int m, int n, int x, int y, std::pair<
 				
 				// ako ne postoji i M2, moramo da se vezemo i za M4
 				if(r.r4 - r.r3 == m) {
-					// ako je sada (r2, r4), a sledeci je (r2, r4-1)
+					// ako je sada (r2 - r1 - 1, r4), a sledeci je (r2 - r1 - 1, r4-1)
 					// vezemo i orijentacija je CW
 				
-					if(y1 == r.r2 && x1 == r.r4 && ret.first == r.r2 && ret.second == r.r4 - 1) {
+					if(y1 == r.r2 - r.r1 - 1 && x1 == r.r4 && ret.first == r.r2 - r.r1 - 1 && ret.second == r.r4 - 1) {
 						return {y + 1, x};
 					}
 					
 					// ako je sada (r2, r4 - 1) i sledeci je (r2, r4)
 					// vezemo i orijentacija je CCW
-					if(y1 == r.r2 && x1 == r.r4 - 1 && ret.first == r.r2 && ret.second == r.r4) {
+					if(y1 == r.r2 - r.r1 - 1 && x1 == r.r4 - 1 && ret.first == r.r2 - r.r1 - 1 && ret.second == r.r4) {
 						return {y + 1, x};
 					}
 				}
