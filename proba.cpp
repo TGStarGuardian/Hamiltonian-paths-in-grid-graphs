@@ -503,20 +503,84 @@ std::pair<int, int> hamiltonian_path_util(int m, int n, int x, int y, std::pair<
 		
 		if(x < r.r3 + 1) {
 			// nalazimo se u M1
-			// samo tacka (0, r.r3) nece direktno pozivati funkciju
-			// ona nam sluzi da se poveze sa M3 ili M5 (ako je M3 prazno)
+			// prate se tacke iz kojih potencijalno
+			// mogu ici putevi iz M5
+			// to su tacke (r.r1 + 1, r.r3 + 1)
+			// i (r.r1 + 2, r.r3 + 1)
+			auto p1 = std::pair<int, int>(r.r1 + 1, r.r3 + 1);
+			auto p2 = std::pair<int, int>(r.r1 + 2, r.r3 + 1);
+			auto P = hamiltonian_path_util(m, n, p1.second, p1.first, s, t, r);
+			auto Q = hamiltonian_path_util(m, n, p2.second, p2.first, s, t, r);
+			// ako je izasao put iz p1...
+			if(P.second == r.r3 && y == r.r1 + 2 && x == r.r3) {
+				return {y, x + 1};
+			}
+			// ako je izasao put iz p2...
+			if(Q.second == r.r3 && y == r.r1 + 1 && x == r.r3) {
+				return {y, x + 1};
+			}
+			
+			// pozovi funkciju za ciklus...
 		}
 		
 		if(x > r.r4) {
 			// nalazimo se u M2
+			// prate se tacke iz kojih potencijalno
+			// mogu ici putevi iz M5
+			// to su tacke (r.r2 - r.r1 - 1, r.r4)
+			// i (r.r2 - r.r1 - 2, r.r4)
+			auto p1 = std::pair<int, int>(r.r2 - r.r1 - 1, r.r4);
+			auto p2 = std::pair<int, int>(r.r2 - r.r1 - 2, r.r4);
+			auto P = hamiltonian_path_util(m, n, p1.second, p1.first, s, t, r);
+			auto Q = hamiltonian_path_util(m, n, p2.second, p2.first, s, t, r);
+			// ako je izasao put iz p1...
+			if(P.second == r.r4 + 1 && y == n - 2 && x == r.r4 + 1) {
+				return {y, x - 1};
+			}
+			// ako je izasao put iz p2...
+			if(Q.second == r.r4 + 1 && y == n - 1 && x == r.r4 + 1) {
+				return {y, x - 1};
+			}
 		}
 		
-		if(y < r.r1 + 1) {
+		if(y < r.r1 + 1 && x < r.r4 + 1 && x > r.r3) {
 			// nalazimo se u M3
+			// prate se tacke iz kojih potencijalno
+			// mogu ici putevi iz M5
+			// to su tacke (r.r1 + 1, r.r3 + 1)
+			// i (r.r1 + 1, r.r3 + 2)
+			auto p1 = std::pair<int, int>(r.r1 + 1, r.r3 + 1);
+			auto p2 = std::pair<int, int>(r.r1 + 1, r.r3 + 2);
+			auto P = hamiltonian_path_util(m, n, p1.second, p1.first, s, t, r);
+			auto Q = hamiltonian_path_util(m, n, p2.second, p2.first, s, t, r);
+			// ako je izasao put iz p1...
+			if(P.first == r.r1 && x == r.r3 + 2 && y == r.r1) {
+				return {y - 1, x};
+			}
+			// ako je izasao put iz p2...
+			if(Q.first == r.r1 && x == r.r3 + 1 && y == r.r1) {
+				return {y - 1, x};
+			}
 		}
 		
-		if(y > r.r2) {
+		if(y > r.r2 && x < r.r4 + 1 && x > r.r3) {
 			// nalazimo se u M4
+			// prate se tacke iz kojih potencijalno
+			// mogu ici putevi iz M5
+			// to su tacke (r.r2, r.r4 - r.r3 - 1)
+			// i (r.r2, r.r4 - r.r3 - 2)
+			auto p1 = std::pair<int, int>(r.r2 - r.r1 - 1, r.r4 - r.r3 - 1);
+			auto p2 = std::pair<int, int>(r.r2 - r.r1 - 1, r.r4 - r.r3 - 2);
+			auto P = hamiltonian_path_util(m, n, p1.second, p1.first, s, t, r);
+			auto Q = hamiltonian_path_util(m, n, p2.second, p2.first, s, t, r);
+			// ako je izasao put iz p1...
+			if(P.first == r.r2 + 1 && y == r.r2 + 1 && x == m - 2) {
+				return {y + 1, x};
+			}
+			// ako je izasao put iz p2...
+			if(Q.first == r.r2 + 1 && y == r.r2 + 1 && x == m - 1) {
+				return {y + 1, x};
+			}
 		}
 	}
 	
