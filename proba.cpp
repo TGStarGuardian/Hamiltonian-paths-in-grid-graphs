@@ -657,7 +657,7 @@ std::pair<int, int> hamiltonian_path_util(int m, int n, int x, int y, std::pair<
 			// mogu ici putevi iz M5
 			// to su tacke (r.r2 - r.r1 - 1, r.r4)
 			// i (r.r2 - r.r1 - 2, r.r4)
-			auto p1 = std::pair<int, int>(r.r2 - r.r1 - 1, r.r4);
+			auto p1 = std::pair<int, int>(r.r2, r.r4);
 			//auto p2 = std::pair<int, int>(r.r2 - r.r1 - 2, r.r4);
 			auto P = hamiltonian_path_util(m, n, p1.second, p1.first, s, t, r);
 			// dovoljna je jedna tacka samo
@@ -731,9 +731,9 @@ std::pair<int, int> hamiltonian_path_util(int m, int n, int x, int y, std::pair<
 			// nalazimo se u M4
 			// prate se tacke iz kojih potencijalno
 			// mogu ici putevi iz M5
-			// to su tacke (r.r2, r.r4 - r.r3 - 1)
+			// to su tacke (r.r2, r.r4)
 			// i (r.r2, r.r4 - r.r3 - 2)
-			auto p1 = std::pair<int, int>(r.r2 - r.r1 - 1, r.r4 - r.r3 - 1);
+			auto p1 = std::pair<int, int>(r.r2, r.r4);
 			// auto p2 = std::pair<int, int>(r.r2 - r.r1 - 1, r.r4 - r.r3 - 2);
 			auto P = hamiltonian_path_util(m, n, p1.second, p1.first, s, t, r);
 			// dovoljna je samo jedna
