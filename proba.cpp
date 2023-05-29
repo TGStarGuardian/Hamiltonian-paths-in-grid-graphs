@@ -563,16 +563,31 @@ std::pair<int, int> hamiltonian_path_util(int m, int n, int x, int y, std::pair<
 			if(P.second == r.r3) {
 				if(y == r.r1 + 2 && x == r.r3) return {y, x + 1};
 				// orijentacija je CCW
+				// treba sada spojiti sa M3 u toj orijentaciji
+				// ako M3 postoji
+				// orijentacija je CCW
+				// znaci spajamo (1, r.r3) sa (1, r.r3 + 1)
+				if(r.r3 > 0 && y == 1 && x == r.r3) return {y, x + 1};
+				// pokusavamo sa M4
+				// spajamo (n - 1, r.r3) sa desnim
+				if(r.r3 != r.r4 && x == r.r3 && y == n - 1) return {y, x + 1};
 				return H_C_M1_M3_CCW(r.r3 + 1, n, x, y);
 			}
 			// ako je izasao put iz p2...
 			if(Q.second == r.r3) {
 				if(y == r.r1 + 1 && x == r.r3) return {y, x + 1};
 				// orijentacija je CW
+				// pokusavamo sa M3
+				// spajamo (0, r.r3) sa desnim
+				if(r.r3 > 0 && !y && x == r.r3) return {y, x + 1};
+				// pokusavamo sa M4
+				if(r.r3 != r.r4 && x == r.r3 && y == n - 2) return {y, x + 1};
+				
 				return H_C_M1_CW(r.r3 + 1, n, x, y);
 			}
 			
-			// pozovi funkciju za ciklus...
+			// ako se M1 nije spojio sa putem, onda on ne postoji
+			// to znaci da odavde ne treba nista raditi
 		}
 		
 		if(x > r.r4) {
@@ -588,6 +603,11 @@ std::pair<int, int> hamiltonian_path_util(int m, int n, int x, int y, std::pair<
 			// ako je izasao put iz p1...
 			if(P.second == r.r4 + 1) {
 				if(y == n - 2 && x == r.r4 + 1) return {y, x - 1};
+				// pokusavamo da spojimo sa M3 i M4
+				// CW orijentacija --> spajamo (1, x) sa levom u M3
+				// CW orijentacija --> spajamo (n - 1, x) sa levom u M4
+				if(r.r3 > 0 && y == 1 && x == r.r4 + 1) return {y, x - 1};
+				if(r.r3 != r.r4 && y == 1 && x == r.r4 + 1) return {y, x -  1};
 				// orijentacija je CW
 				auto ret = H_C_M2_CW(m - r.r4 - 1, n, x - r.r4 - 1, y);
 				ret.second += r.r4 + 1;
@@ -596,11 +616,16 @@ std::pair<int, int> hamiltonian_path_util(int m, int n, int x, int y, std::pair<
 			// ako je izasao put iz p2...
 			if(Q.second == r.r4 + 1) {
 				if(y == n - 1 && x == r.r4 + 1) return {y, x - 1};
+				if(r.r3 > 0 && !y && x == r.r4 + 1) return {y, x - 1};
+				if(r.r3 != r.r4 && y == n - 2 && x == r.r4 + 1) return {y, x -  1};
 				// orijentacija je CCW
 				auto ret = H_C_M2_M4_CCW(m - r.r4 - 1, n, x - r.r4 - 1, y);
 				ret.second += r.r4 + 1;
 				return ret;
 			}
+			
+			// ako se nije u M2 povezao, to znaci da se put povezao sa M3 ili M1
+			// mi odavde samo treba da 
 		}
 		
 		if(y < r.r1 + 1 && x < r.r4 + 1 && x > r.r3) {
@@ -710,13 +735,30 @@ int main() {
 	std::cout << duration.count() << '\n';
 	std::cout << x << '\n';
 */
-	
+	/*
+	auto start = std::chrono::high_resolution_clock::now();
+	auto x = s;
 	for(int i = 0; i < n; i++) {
 		for(int j = 0; j < m; j++) {
 			std::cout << find_hamiltonian_path(m, n, j, i, s, t) << " ";
 		}
 		std::cout << '\n';
 	}
+	auto stop = std::chrono::high_resolution_clock::now();
+	auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
+	std::cout << duration.count() << '\n';
+	*/
+	auto start = std::chrono::high_resolution_clock::now();
+	auto x = s;
+	for(int i = 0; i < n; i++) {
+		for(int j = 0; j < m; j++) {
+			x = find_hamiltonian_path(m, n, x.second, x.first, s, t);
+		}
+	}
+	auto stop = std::chrono::high_resolution_clock::now();
+	auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
+	std::cout << duration.count() << '\n';
+
 	/*
 	std::pair<int, int> p = {1, 0};
 	for(int i = 0; i < 2; i++) {
