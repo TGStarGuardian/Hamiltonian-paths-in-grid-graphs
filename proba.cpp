@@ -359,22 +359,13 @@ std::pair<int, int> find_path_m5(int m, int n, int x, int y, std::pair<int, int>
 	// za n < 4, radimo po vertikali
 	if(n >= 4) return horizontal_trisection(m, n, x, y, s, t);
 	else return vertical_trisection(m, n, x, y, s, t);
+	
+	// treba dodati i ostale slucajeve
+	// to cemo posle
 
 }
 
-std::pair<int, int> find_hamiltonian_path(int m, int n, int x, int y, std::pair<int, int>& s, std::pair<int, int>& t) {
-
-	// ako su s i t ista tacka, gledamo ima li ciklusa
-	// ako ima, nalazimo ga
-	if(s == t) {
-		if(!has_hamiltonian_cycle(m, n)) return {-1, -1};
-		return H_C_M1_M3_CCW(m, n, x, y);
-	}
-	
-	// ako nema puta, batali
-	if(!has_hamiltonian_path(s, t, m, n)) return {-1, -1};
-	// svaki procesor racuna peeling
-	peeling r = peel(s, t, m, n);
+std::pair<int, int> hamiltonian_path_util(int m, int n, int x, int y, std::pair<int, int>& s, std::pair<int, int>& t, peeling& r) {
 	
 	// ako postoji u M5 i tacka je u M5, idi u M5
 	// inace specijalan slucaj...
@@ -420,11 +411,12 @@ std::pair<int, int> find_hamiltonian_path(int m, int n, int x, int y, std::pair<
 				// ako postoji bar jedan, onda M1 se veze za taj i za M2
 				if(r.r2 - r.r1 == n) {
 					// vezujemo za M2
-					// donji desni je na (r2, r4)
+					// donji desni je na (r2, r4 + r.r3)
 					// ako je njemu sledeci (r2 - 1, r4), vezemo se
 					// orijentacija je CCW
-					if(y1 == r.r2 && x1 == r.r4 && ret.first == r.r2 - 1 && ret.second == r.r4)
+					if(y1 == r.r2 && x1 == r.r4 && ret.first == r.r2 - 1 && ret.second == r.r4) {
 						return {y, x + 1};
+					}
 					
 					// ako je tacki (r2 - 1, r4) sledeca (r2, r4), vezemo se
 					// orijentacija je CW
@@ -529,6 +521,27 @@ std::pair<int, int> find_hamiltonian_path(int m, int n, int x, int y, std::pair<
 	}
 	
 	return {-1, -1};
+}
+
+std::pair<int, int> find_hamiltonian_path(int m, int n, int x, int y, std::pair<int, int>& s, std::pair<int, int>& t) {
+	// ako su s i t ista tacka, gledamo ima li ciklusa
+	// ako ima, nalazimo ga
+	if(s == t) {
+		if(!has_hamiltonian_cycle(m, n)) return {-1, -1};
+		return H_C_M1_M3_CCW(m, n, x, y);
+	}
+	
+	// ako nema puta, batali
+	if(!has_hamiltonian_path(s, t, m, n)) return {-1, -1};
+	
+	peeling r = peel(s, t, m, n);
+	
+	
+	// util funkcija ce da obradi posebne slucajeve
+	// recimo, korisno je da se kod ponovi ako se u
+	// odredjenom slucaju menjaju granice za peeling
+	// zato util funkcija prima peeling kao argument
+	return hamiltonian_path_util(m, n, x, y, s, t, r);
 }
 
 
