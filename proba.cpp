@@ -229,17 +229,25 @@ inline bool out_of_bounds(int x, int l, int r) {
 	return (x < l && x > r);
 }
 
-inline bool is_corner_vertex(int y, int width) {
-	return !y || !(y - width);
+inline bool is_corner_vertex(int x, int m) {
+	// samo ako je x == 0 ili x == m - 1
+	// ako je x == m - 1, onda je x - m - 1 == 0
+	return !x || !(x - m + 1);
 }
 
-inline bool connected_by_non_boundary_edge(std::pair<int, int>& s, std::pair<int, int>& t, int width, int height) {
-	return (s.first == t.first && std::abs(s.second - t.second) == 1 && !is_corner_vertex(s.first, height))
-			|| (s.second == t.second && std::abs(s.first - t.first) == 1 && !is_corner_vertex(s.second, width));
+inline bool connected_by_non_boundary_edge(std::pair<int, int>& s, std::pair<int, int>& t, int m, int n) {
+	// ovo implicira da je matrica 2xm ili nx2
+	// za 2xm je ovo ispunjeno ako su ime iste x-koordinate, razlicite y-koordinate i x > 0 i x < m - 1
+	// za nx2 slicno
+	// s.first == t.first, s.first, t.first su iz {0, 1}
+	// s.first - t.first == 0
+	// s.first xor t.first
+	return (n == 2 && s.second == t.second && !is_corner_vertex(s.second, m) && (s.first ^ t.first))
+	|| (m == 2 && s.first == t.first && !is_corner_vertex(s.first, n) && (s.second ^ t.second));
 }
 
 bool color_compatible(std::pair<int, int>& v1, std::pair<int, int>& v2, int width, int height) {
-	int parity= (width % 2) && (height % 2);
+	int parity = (width % 2) && (height % 2);
 	return (!parity && ((v1.first + v1.second + v2.first + v2.second) % 2))
 		|| (parity && !((v1.first + v1.second) % 2) && !((v2.first + v2.second) % 2));
 }
@@ -255,27 +263,27 @@ bool has_hamiltonian_cycle(int width, int height) {
 	return !((width % 2) && (height % 2)) && (width ^ 1) && (height ^ 1);
 }
 
-bool has_hamiltonian_path(std::pair<int, int> s, std::pair<int, int> t, int width, int height) {
+bool has_hamiltonian_path(std::pair<int, int> s, std::pair<int, int> t, int m, int n) {
 
-	if(s.second > t.second) std::swap(s, t);
-
-	auto x = s;
-	auto y = t;
-
-	if(x.first > y.first) std::swap(x, y);
-
-	if(out_of_bounds(s.first, 0, height)
-		|| out_of_bounds(s.second, 0, width)
-		|| out_of_bounds(t.first, 0, height)
-		|| out_of_bounds(t.second, 0, width)) {
+	if(out_of_bounds(s.first, 0, n)
+		|| out_of_bounds(s.second, 0, m)
+		|| out_of_bounds(t.first, 0, n)
+		|| out_of_bounds(t.second, 0, m)) {
 	throw "Error: either s or t are outside the matrix";
 }
-	return color_compatible(s, t, width, height) &&
-		!( (height == 1 && (!is_corner_vertex(s.second, width) || !is_corner_vertex(t.second, width)))
-		 || (width == 1 && (!is_corner_vertex(s.first, height) || !is_corner_vertex(t.first, height)))
-		 || ((width == 2 || height == 2) && connected_by_non_boundary_edge(s, t, width, height))
-		 || (width == 3 && !(height % 2) && ((x.first + x.second) % 2) && !((y.first + y.second) % 2) && ((x.second == 1 && y.first > x.first) || (x.second != 1 && y.first > x.first + 1)))
-		 || (height == 3 && !(width % 2) && ((s.first + s.second) % 2) && !((t.first + t.second) % 2) && ( (s.first == 1 && t.second > s.second) || (s.first != 1 && t.second > s.second + 1)))
+	return color_compatible(s, t, m, n) &&
+		!( (n == 1 && (!is_corner_vertex(s.second, m) || !is_corner_vertex(t.second, m)))
+		 || (m == 1 && (!is_corner_vertex(s.first, n) || !is_corner_vertex(t.first, n)))
+		 || connected_by_non_boundary_edge(s, t, m, n)
+		 // n == 3, m parno...u radu stoji da treba biti izomorfno sa s crna, s.x < t.x (za sy == 1) ili t.x > s.x + 1 (za sy != 1)
+		 // to znaci da mora biti ovo da vazi i kad rotiramo sliku i kad rotiramo uloge za s i t
+		 // znaci, potrebno je obraditi slucaj kada se slika zarotira oko y-ose
+		 // ali tada se menjaju boje
+		 // tako da je potrebno samo razmotriti ovaj slucaj kada je s crna ili kada je t crna 
+		 || (n == 3 && !(m % 2) && ((s.first + s.second) % 2) && ((s.first == 1 && s.second < t.second) || (s.first != 1 && t.second > s.second + 1)))
+		 || (n == 3 && !(m % 2) && ((t.first + t.second) % 2) && ((t.first == 1 && t.second < s.second) || (t.first != 1 && s.second > t.second + 1)))
+		 || (m == 3 && !(n % 2) && ((s.second + s.first) % 2) && ((s.second == 1 && s.first < t.first) || (s.second != 1 && t.first > s.first + 1)))
+		 || (m == 3 && !(n % 2) && ((t.first + t.second) % 2) && ((t.second == 1 && t.first < s.first) || (t.second != 1 && s.first > t.first + 1)))
 		);
 }
 
@@ -426,360 +434,15 @@ std::pair<int, int> hamiltonian_path_util(int m, int n, int x, int y, std::pair<
 			int y1 = y - r.r1 - 1;
 			auto ret = find_path_m5(r.r4 - r.r3, r.r2 - r.r1, x1, y1, s1, t1);
 			if(ret.first == -1 || ret.second == -1) return {-1, -1};
+		}	
 			
-			// vezacemo se za M1 ako M1 postoji
-			// pratimo da li je tacki (0, 0) sledbenik (0, 1) ili (1, 0)
-			// ako je to tacka (1, 0), onda tacku (1, 0) vezemo za M1
-			// ako ne, vezemo (0, 0) za M1
-			// u oba slucaja je moguce vezati
-			// recimo, ako je sledbenik od (0, 0) (0, 1), onda pokazujem
-			// da je moguce vezati (1, 0) za M1
-			// to jedino nije moguce ako je (1, 0) == t
-			// ako je t == (1, 0), onda je sledbenik od (0, 0) tacka t
-			// to je kontradikcija sa tim da je (0, 1) sledbenik od (0, 0)
-			// na slican nacin se vezemo i za M2
-			if(r.r3 > 0) {
-				// postoji M1
-				// ako smo u (0, 0) i njoj je sledbenik (1, 0)
-				// vezem (0, 0) za M1 i M1 orijentisem CCW
-				if(!x1 && !y1 && ret.first == 1 && !ret.second) {
-					return {y, x - 1};
-				}
-				// ako smo u (1, 0) i njoj je sledbenik (0, 0)
-				// vezem (1, 0) za M1 i M1 orijentisem CW
-				if(!x1 && y1 == 1 && !ret.first && !ret.second) {
-					return {y, x - 1};
-				}
-				// ako (0, 0) ne ide u (1, 0)
-				// onda (1, 0) ide svakako u (0, 0)
-				// oba nisu moguca istovremeno: da (0, 0) ide u (1, 0)
-				// i obrnuto
-				
-				// ako ne postoje M3 i M4, onda moramo vezati i za M2
-				// ako postoji bar jedan, onda M1 se veze za taj i za M2
-				if(r.r2 - r.r1 == n) {
-					// vezujemo za M2
-					// donji desni je na (r2, r.r4 - r.r3 - 1)
-					// ako je njemu sledeci (r2 - 1, r.r4 - r.r3 - 1), vezemo se
-					// orijentacija je CCW
-					if(y1 == r.r2 && x1 == r.r4 - r.r3 - 1 && ret.first == r.r2 - 1 && ret.second == r.r4 - r.r3 - 1) {
-						return {y, x + 1};
-					}
-					
-					// ako je tacki (r2 - 1, r.r4 - r.r3 - 1) sledeca (r2, r.r4 - r.r3 - 1), vezemo se
-					// orijentacija je CW
-					
-					if(y1 == r.r2 - 1 && x1 == r.r4 - r.r3 - 1 && ret.first == r.r2 && ret.second == r.r4 - r.r3 - 1) {
-						return {y, x + 1};
-					}
-				}
-				
-			} else if(r.r1 > 0) {
-				// ne postoji M1, ali postoji M3
-				// ako smo u (0, 0) i njoj je sledbenik (0, 1)
-				// vezem (0, 0) za M3 i M3 orijentisem CW
-				if(!x1 && !y1 && !ret.first && ret.second == 1) {
-					return {y - 1, x};
-				}
-				// ako smo u (0, 1) i njoj je sledbenik (0, 0)
-				// vezem (0, 1) za M3 i M3 orijentisem CCW
-				if(x1 && !y1 == 1 && !ret.first && !ret.second) {
-					return {y - 1, x};
-				}
-				
-				// ako ne postoji i M2, moramo da se vezemo i za M4
-				if(r.r4 - r.r3 == m) {
-					// ako je sada (r2 - r1 - 1, r4), a sledeci je (r2 - r1 - 1, r4-1)
-					// vezemo i orijentacija je CW
-				
-					if(y1 == r.r2 - r.r1 - 1 && x1 == r.r4 && ret.first == r.r2 - r.r1 - 1 && ret.second == r.r4 - 1) {
-						return {y + 1, x};
-					}
-					
-					// ako je sada (r2, r4 - 1) i sledeci je (r2, r4)
-					// vezemo i orijentacija je CCW
-					if(y1 == r.r2 - r.r1 - 1 && x1 == r.r4 - 1 && ret.first == r.r2 - r.r1 - 1 && ret.second == r.r4) {
-						return {y + 1, x};
-					}
-				}
-			} else {
-				// ne postoje ni M1 ni M3
-				// donji desni ugao vezemo za M2 ili M4
-				// preferiramo M2
-				// M1 ne postoji, pa onda M5 i M2 pokrivaju celu sirinu
-				// M2 ne postoji ako M5 pokriva celu sirinu
-				if(r.r4 - r.r3 < m) {
-					// donji desni je na (r2, r4)
-					// ako je njemu sledeci (r2 - 1, r4), vezemo se
-					// orijentacija je CCW
-					
-					if(y1 == r.r2 && x1 == r.r4 && ret.first == r.r2 - 1 && ret.second == r.r4)
-						return {y, x + 1};
-					
-					// ako je tacki (r2 - 1, r4) sledeca (r2, r4), vezemo se
-					// orijentacija je CW
-					
-					if(y1 == r.r2 - 1 && x1 == r.r4 && ret.first == r.r2 && ret.second == r.r4) {
-						return {y, x + 1};
-					}
-					
-				} else if(r.r2 - r.r1 < n) {
-					// ne postoje M1, M2 i M3, ali postoji M4
-					// ako je sada (r2, r4), a sledeci je (r2, r4-1)
-					// vezemo i orijentacija je CW
-					
-					if(y1 == r.r2 && x1 == r.r4 && ret.first == r.r2 && ret.second == r.r4 - 1) {
-						return {y + 1, x};
-					}
-					
-					// ako je sada (r2, r4 - 1) i sledeci je (r2, r4)
-					// vezemo i orijentacija je CCW
-					if(y1 == r.r2 && x1 == r.r4 - 1 && ret.first == r.r2 && ret.second == r.r4) {
-						return {y + 1, x};
-					}
-				} else {
-					// ne radimo nista, prosto M5 pokriva sve
-				}
-			
-			}
-				
-			
-			ret.first += r.r1 + 1;
-			ret.second += r.r3 + 1;
-			return ret;
-		}
-		
-		if(x < r.r3 + 1) {
-			// nalazimo se u M1
-			// prate se tacke iz kojih potencijalno
-			// mogu ici putevi iz M5
-			// to su tacke (r.r1 + 1, r.r3 + 1)
-			// i (r.r1 + 2, r.r3 + 1)
-			auto p1 = std::pair<int, int>(r.r1 + 1, r.r3 + 1);
-			//auto p2 = std::pair<int, int>(r.r1 + 2, r.r3 + 1);
-			auto P = hamiltonian_path_util(m, n, p1.second, p1.first, s, t, r);
-			// dovoljan je jedan poziv samo
-			// auto Q = hamiltonian_path_util(m, n, p2.second, p2.first, s, t, r);
-			// ako je izasao put iz p1...
-			if(P.second == r.r3) {
-				if(y == r.r1 + 2 && x == r.r3) return {y, x + 1};
-				// orijentacija je CCW
-				// treba sada spojiti sa M3 u toj orijentaciji
-				// ako M3 postoji
-				// orijentacija je CCW
-				// znaci spajamo (1, r.r3) sa (1, r.r3 + 1)
-				if(r.r3 > 0 && y == 1 && x == r.r3) return {y, x + 1};
-				// pokusavamo sa M4
-				// spajamo (n - 1, r.r3) sa desnim
-				//if(r.r3 != r.r4 && x == r.r3 && y == n - 1) return {y, x + 1};
-				return H_C_M1_M3_CCW(r.r3 + 1, n, x, y);
-			} else {
-				if(y == r.r1 + 1 && x == r.r3) return {y, x + 1};
-				// orijentacija je CW
-				// pokusavamo sa M3
-				// spajamo (0, r.r3) sa desnim
-				if(r.r3 > 0 && !y && x == r.r3) return {y, x + 1};
-				// pokusavamo sa M4
-				//if(r.r3 != r.r4 && x == r.r3 && y == n - 2) return {y, x + 1};
-				
-				return H_C_M1_CW(r.r3 + 1, n, x, y);
-			}
-			
-			// ako se M1 nije spojio sa putem, onda on ne postoji
-			// to znaci da odavde ne treba nista raditi
-		}
-		
-		if(y < r.r1 + 1 && x < r.r4 + 1 && x > r.r3) {
-			// nalazimo se u M3
-			// prate se tacke iz kojih potencijalno
-			// mogu ici putevi iz M5
-			// to su tacke (r.r1 + 1, r.r3 + 1)
-			// i (r.r1 + 1, r.r3 + 2)
-			auto p1 = std::pair<int, int>(r.r1 + 1, r.r3 + 1);
-			// auto p2 = std::pair<int, int>(r.r1 + 1, r.r3 + 2);
-			auto P = hamiltonian_path_util(m, n, p1.second, p1.first, s, t, r);
-			// dovoljan je samo jedan poziv
-			// jer put se veze za M1 ako M1 postoji
-			// inace se tek veze za M3
-			// auto Q = hamiltonian_path_util(m, n, p2.second, p2.first, s, t, r);
-			if(r.r3 < 0) {
-				// ako M1 ne postoji, pogledamo samo jednu sa ugla
-				if(P.first == r.r1) {
-					if(x == r.r3 + 2 && y == r.r1) return {y + 1, x};
-					// orijentacija je CW
-					auto ret = H_C_M3_CW(r.r4 - r.r3, r.r1 + 1, x - r.r3 - 1, y);
-					ret += std::pair{0, r.r3 + 1};
-					return ret;
-				} else {
-					if(x == r.r3 + 1 && y == r.r1) return {y + 1, x};
-					// orijentacija je CCW
-					auto ret = H_C_M1_M3_CCW(r.r4 - r.r3, r.r1 + 1, x - r.r3 - 1, y);
-					ret += std::pair{0, r.r3 + 1};
-					return ret;
-				}
-			
-			} else {
-				// M1 postoji, vezao se za njega
-				// jedino sto treba je videti orijentaciju
-				// mi smo nasli sledbenika od (r.r1 + 1, r.r3 + 1)
-				// na osnovu toga mozemo znati koju orijentaciju biramo
-				
-				// ako se ta tacka vezala za M1, onda M1 ima orijentaciju CCW
-				// tada i M3 ima orijentaciju CCW
-				// tada nam on prilazi sa (1, r.r3), pa treba (0, r.r3 + 1) povezati levo
-				if(P.second == r.r3) {
-					if(!y && x == r.r3 + 1) return {y, x - 1};
-					// i treba vezati se za M2 ako M2 postoji
-					if(m - 1 - r.r4 > 0 && x == r.r4 && y == 1) return {y, x + 1}; 
-					auto ret = H_C_M1_M3_CCW(r.r4 - r.r3, r.r1 + 1, x - r.r3 - 1, y);
-					ret += std::pair{0, r.r3 + 1};
-					return ret;
-				
-				} else {
-				// ako se tacka nije vezala za M1, onda M1 ima orijentaciju CW
-				// tada i M3 ima orijentaciju CW
-				// tada M1 izlazi u M3 sa (0, r.r3), pa (1, r.r3 + 1) ide levo
-					if(y == 1 && x == r.r3 + 1) return {y, x - 1};
-					// vezujemo se za M2
-					if(m - r.r4 > 1 && x == r.r4 && !y) return {y, x + 1};
-					auto ret = H_C_M3_CW(r.r4 - r.r3, r.r1 + 1, x - r.r3 - 1, y);
-					ret += std::pair{0, r.r3 + 1};
-					return ret;	
-				
-				}
-			}
-		}
-		
-		
-			if(x > r.r4) {
-			// nalazimo se u M2
-			// prate se tacke iz kojih potencijalno
-			// mogu ici putevi iz M5
-			// to su tacke (r.r2 - r.r1 - 1, r.r4)
-			// i (r.r2 - r.r1 - 2, r.r4)
-			auto p1 = std::pair<int, int>(r.r2, r.r4);
-			//auto p2 = std::pair<int, int>(r.r2 - r.r1 - 2, r.r4);
-			auto P = hamiltonian_path_util(m, n, p1.second, p1.first, s, t, r);
-			// dovoljna je jedna tacka samo
-			//auto Q = hamiltonian_path_util(m, n, p2.second, p2.first, s, t, r);
-			// ako je izasao put iz p1...
-			// on ce se spojiti sa M2 samo ako nije pre toga sa M1 i sa M3
-			if(r.r1 < 0 && r.r3 < 0) {
-				if(P.second == r.r4 + 1) {
-					if(y == n - 2 && x == r.r4 + 1) return {y, x - 1};
-					// pokusavamo da spojimo sa M3 i M4
-					// CW orijentacija --> spajamo (1, x) sa levom u M3
-					// CW orijentacija --> spajamo (n - 1, x) sa levom u M4
-					if(r.r3 > 0 && y == 1 && x == r.r4 + 1) return {y, x - 1};
-					if(r.r3 != r.r4 && y == 1 && x == r.r4 + 1) return {y, x -  1};
-					// orijentacija je CW
-					auto ret = H_C_M2_CW(m - r.r4 - 1, n, x - r.r4 - 1, y);
-					ret.second += r.r4 + 1;
-					return ret;
-				} else {
-					if(y == n - 1 && x == r.r4 + 1) return {y, x - 1};
-					if(r.r3 > 0 && !y && x == r.r4 + 1) return {y, x - 1};
-					if(r.r3 != r.r4 && y == n - 2 && x == r.r4 + 1) return {y, x -  1};
-					// orijentacija je CCW
-					auto ret = H_C_M2_M4_CCW(m - r.r4 - 1, n, x - r.r4 - 1, y);
-					ret.second += r.r4 + 1;
-					return ret;
-				}
-			
-			}
-			
-			// posto nije vezan za M2, treba samo vezati se za M3 i M4
-			if(r.r1 > 0) {
-				// vezi se za M3
-				// na osnovu tacke P odredjujemo orijentaciju
-				// ako je P levo od donjeg desnog ugla od M5, onda CW
-				// ako ne, onda CCW
-				
-				// vezi (1, r.r4 + 1) levo
-				if(P.second == r.r4 - 1) {
-				 	if(x == r.r4 + 1 && y == 1) return {y, x - 1};
-				 	// CW
-				} else {
-					if(x == r.r4 + 1 && !y) return {y, x - 1};
-					// CCW
-				}
-			}
-			
-			if(m - r.r2 > 1) {
-				// vezi se za M4
-				if(P.second == r.r4 - 1) {
-					if(y == n - 1 && x == r.r4 + 1) return {y, x - 1};
-					// CW
-				} else {
-					if(y == n - 2 && x == r.r4 + 1) return {y, x - 1};
-				}
-			}
-			
-			if(P.second == r.r4 - 1) {
-				auto ret = H_C_M2_CW(m - r.r4 - 1, n, x - r.r4 - 1, y);
-				ret.second += r.r4 + 1;
-				return ret;
-			} else {
-				auto ret = H_C_M2_M4_CCW(m - r.r4 - 1, n, x - r.r4 - 1, y);
-				ret.second += r.r4 + 1;
-				return ret;
-			}
-			
-		}
-		
-		if(y > r.r2 && x < r.r4 + 1 && x > r.r3) {
-			// nalazimo se u M4
-			// prate se tacke iz kojih potencijalno
-			// mogu ici putevi iz M5
-			// to su tacke (r.r2, r.r4)
-			// i (r.r2, r.r4 - r.r3 - 2)
-			auto p1 = std::pair<int, int>(r.r2, r.r4);
-			// auto p2 = std::pair<int, int>(r.r2 - r.r1 - 1, r.r4 - r.r3 - 2);
-			auto P = hamiltonian_path_util(m, n, p1.second, p1.first, s, t, r);
-			// dovoljna je samo jedna
-			// auto Q = hamiltonian_path_util(m, n, p2.second, p2.first, s, t, r);
-			// ako je izasao put iz p1...
-			if(r.r1 < 0 && r.r4 - r.r3 == m) {
-				if(P.first == r.r2 + 1) {
-					if(y == r.r2 + 1 && x == m - 2) return {y + 1, x};
-					// orijentacija je CW
-					auto ret = H_C_M4_CW(r.r4 - r.r3, n - r.r2 - 1, x - r.r3 - 1, y - r.r2 - 1);
-					ret += std::pair{r.r2 + 1, r.r3 + 1};
-					return ret;
-				} else {
-					if(y == r.r2 + 1 && x == m - 1) return {y + 1, x};
-					// orijentacija je CCW
-					auto ret = H_C_M2_M4_CCW(r.r4 - r.r3, n - r.r2 - 1, x - r.r3 - 1, y - r.r2 - 1);
-					ret += std::pair{r.r2 + 1, r.r3 + 1};
-					return ret;
-				}
-			}
-			
-			// inace probamo da se vezemo sa M2
-			if(m - r.r4 > 1) {
-				if(P.second == r.r4 - 1) {
-					// CW
-					// vezemo (n - 2, r.r4) desno
-					if(x == r.r4 && y == n - 2) return {y, x + 1};
-				} else {
-					// CCW
-					// vezemo (n - 1, r.r4) desno
-					if(x == r.r4 && y == n - 1) return {y, x + 1};
-				}
-			}
-			
-			if(P.second == r.r4 - 1) {
-				// CW
-				auto ret = H_C_M4_CW(r.r4 - r.r3, n - r.r2 - 1, x - r.r3 - 1, y - r.r2 - 1);
-				ret += std::pair{r.r2 + 1, r.r3 + 1};
-				return ret;
-			} else {
-				// CCW
-				auto ret = H_C_M2_M4_CCW(r.r4 - r.r3, n - r.r2 - 1, x - r.r3 - 1, y - r.r2 - 1);
-				ret += std::pair{r.r2 + 1, r.r3 + 1};
-				return ret;
-			}
-		}
+	} else {
+	
+	
+	
+	
+	
+	
 	}
 	
 	return {-1, -1};
@@ -834,6 +497,7 @@ int main() {
 	std::cout << duration.count() << '\n';
 	std::cout << x << '\n';
 */
+/*
 	for(int i = 0; i < n; i++) {
 		for(int j = 0; j < m; j++) {
 			std::cout << find_hamiltonian_path(m, n, j, i, s, t) << " ";
@@ -847,6 +511,13 @@ int main() {
 			std::cout <<  (x = find_hamiltonian_path(m, n, x.second, x.first, s, t)) << '\n';
 		}
 	}
+	
+	*/
+	
+	std::cout << is_corner_vertex(m - 1, m) << '\n';
+	std::cout << connected_by_non_boundary_edge(s, t, m, n) << '\n';
+	std::cout << has_hamiltonian_path(s, t, m, n) << '\n';
+	
 	/*
 	auto start = std::chrono::high_resolution_clock::now();
 	auto x = s;
