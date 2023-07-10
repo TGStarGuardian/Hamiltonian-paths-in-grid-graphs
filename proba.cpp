@@ -135,6 +135,7 @@ std::pair<int, int> horizontal_trisection(int m, int n, int x, int y, const std:
 	// postoje 2 slucaja - s je gore ili je t gore
 	// podrazumevamo da su s i t antipodi, jer inace ovo ne radi
 	// podrazumevamo i n >= 4, jer inace nema horizontalne trisekcije
+	// takodje se podrazumeva da je m >= 2
 	
 	if(s.first < t.first) {
 		// trazimo tacku p
@@ -433,23 +434,52 @@ inline std::pair<int, int> reflect_over_xy(int x, int y, int m, int n) {
 
 
 std::pair<int, int> find_path_m5(int m, int n, int x, int y, std::pair<int, int>& s, std::pair<int, int>& t) {
-	// za n >= 4, radimo po horizontali
-	// za n < 4, radimo po vertikali
-	if(n >= 4) return horizontal_trisection(m, n, x, y, s, t);
-	if(m >= 4) return vertical_trisection(m, n, x, y, s, t);
+	if(n >= 4 && (m > 3 || (m == 3 && !((s.first + s.second) % 2) ))) return horizontal_trisection(m, n, x, y, s, t);
+	
+	if(n >= 4) {
+		// za m == 1 i m == 2, imamo vec dole obradjene slucajeve
+		// za m == 3, resavamo ovde
+		if(m == 3) {
+			// tada znamo da je s crna, jer nije prosao gornji slucaj
+			// ovde je junction vertex na sredini
+			// posto je t levo od s, onda okrenemo graf po y-osi
+			auto s1 = reflect_over_x(s.second, s.first, n);
+			auto t1 = reflect_over_x(t.second, t.first, n);
+			auto ret = find_path_m5(m, n, x, n - 1 - y, s1, t1);
+			if(ret.first == -1 || ret.second == -1) return {-1, -1};
+			return reflect_over_x(ret.second, ret.first, n);
+		}
+	}
+	
+	if(m >= 4 && (n > 3 || (n == 3 && !((s.first + s.second) % 2) ))) return vertical_trisection(m, n, x, y, s, t);
+	
+	if(m >= 4) {
+		if(n == 3) {
+			auto s1 = reflect_over_y(s.second, s.first, m);
+			auto t1 = reflect_over_y(t.second, t.first, m);
+			auto ret = find_path_m5(m, n, m - 1 - x, y, s1, t1);
+			if(ret.first == -1 || ret.second == -1) return {-1, -1};
+			return reflect_over_y(ret.second, ret.first, m);
+			
+		}
+	
+	}
+	
 	
 	// ovde je m < 4 i n < 4
 	// imamo slucajeve:
 	
 	// 1x2, 1x3, 2x1, 3x1
 	if(m == 1) {
-		// vracamo onaj desno (ako on nije poslednji)
-		if(y <= n - 1) return {y + 1, x};
+		// vracamo onaj dole/gore (ako on nije poslednji)
+		if(!s.first && y <= n - 1) return {y + 1, x};
+		if(s.first && y >= 0) return {y - 1, x};
 		else return {-1, -1};
 	}
 	
 	if(n == 1) {
-		if(x <= m - 1) return {y, x + 1};
+		if(!s.second && x <= m - 1) return {y, x + 1};
+		if(s.second && x >= 0) return {y, x - 1};
 		else return {-1, -1};
 	}
 	
@@ -727,7 +757,7 @@ int main() {
 	std::cin >> n;
 
 	auto x = s;
-	for(int i = 0; i < 9; i++) {
+	for(int i = 0; i < n*m; i++) {
 		x = find_path_m5(m, n, x.second, x.first, s, t);
 		std::cout << x << '\n';
 	}
