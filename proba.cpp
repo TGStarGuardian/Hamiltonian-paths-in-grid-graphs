@@ -442,12 +442,29 @@ std::pair<int, int> find_path_m5(int m, int n, int x, int y, std::pair<int, int>
 		if(m == 3) {
 			// tada znamo da je s crna, jer nije prosao gornji slucaj
 			// ovde je junction vertex na sredini
-			// posto je t levo od s, onda okrenemo graf po y-osi
-			auto s1 = reflect_over_x(s.second, s.first, n);
-			auto t1 = reflect_over_x(t.second, t.first, n);
-			auto ret = find_path_m5(m, n, x, n - 1 - y, s1, t1);
-			if(ret.first == -1 || ret.second == -1) return {-1, -1};
-			return reflect_over_x(ret.second, ret.first, n);
+			// ako je t iznad s, onda okrenemo graf po x-osi
+			
+			if(t.second < s.second) {
+				auto s1 = reflect_over_x(s.second, s.first, n);
+				auto t1 = reflect_over_x(t.second, t.first, n);
+				auto ret = find_path_m5(m, n, x, n - 1 - y, s1, t1);
+				if(ret.first == -1 || ret.second == -1) return {-1, -1};
+				return reflect_over_x(ret.second, ret.first, n);
+			}
+			
+			// sada je s gore
+			// spajamo s sa (1, 1), (1, 1) sa (2, 1), a (2, 1) sa t
+			if(y <= 1) {
+				if(x == 1 && y == 1) return {2, 1};
+				std::pair<int, int> p = {1, 1};
+				return path_2_m(3, x, y, s, p);
+			} else {
+				std::pair<int, int> q = {0, 1}, t1 = {t.first - 2, t.second};
+				auto ret = path_2_m(3, x, y - 2, q, t1);
+				if(ret.first == -1 || ret.second == -1) return {-1, -1};
+				ret.first += 2;
+				return ret;
+			}
 		}
 	}
 	
@@ -455,12 +472,26 @@ std::pair<int, int> find_path_m5(int m, int n, int x, int y, std::pair<int, int>
 	
 	if(m >= 4) {
 		if(n == 3) {
-			auto s1 = reflect_over_y(s.second, s.first, m);
-			auto t1 = reflect_over_y(t.second, t.first, m);
-			auto ret = find_path_m5(m, n, m - 1 - x, y, s1, t1);
-			if(ret.first == -1 || ret.second == -1) return {-1, -1};
-			return reflect_over_y(ret.second, ret.first, m);
+			if(t.first < s.first) {
+				auto s1 = reflect_over_y(s.second, s.first, m);
+				auto t1 = reflect_over_y(t.second, t.first, m);
+				auto ret = find_path_m5(m, n, m - 1 - x, y, s1, t1);
+				if(ret.first == -1 || ret.second == -1) return {-1, -1};
+				return reflect_over_y(ret.second, ret.first, m);
+			}
 			
+			// spajamo s sa (1, 1), (1, 1) sa (1, 2), a (1, 2) sa t
+			if(x <= 1) {
+				if(x == 1 && y == 1) return {1, 2};
+				std::pair<int, int> p = {1, 1};
+				return path_n_2(3, x, y, s, p);
+			} else {
+				std::pair<int, int> q = {1, 0}, t1 = {t.first, t.second - 2};
+				auto ret = path_n_2(3, x - 2, y, q, t1);
+				if(ret.first == -1 || ret.second == -1) return {-1, -1};
+				ret.second += 2;
+				return ret;
+			}
 		}
 	
 	}
