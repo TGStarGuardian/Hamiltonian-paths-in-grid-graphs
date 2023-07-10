@@ -18,7 +18,7 @@ std::pair<int, int> operator+(const std::pair<int, int>&& x, const std::pair<int
 	return {x.first + y.first, x.second + y.second};
 }
 
-std::pair<int, int> operator+=(std::pair<int, int>& x, std::pair<int, int>&& y) {
+std::pair<int, int> operator+=(std::pair<int, int>& x, const std::pair<int, int>&& y) {
 	x.first += y.first;
 	x.second += y.second;
 	return x;
@@ -205,7 +205,7 @@ std::pair<int, int> horizontal_trisection(int m, int n, int x, int y, const std:
 	}
 }
 
-std::pair<int, int> vertical_trisection(int m, int n, int x, int y, std::pair<int, int>& s, std::pair<int, int>&t) {
+std::pair<int, int> vertical_trisection(int m, int n, int x, int y, const std::pair<int, int>& s, const std::pair<int, int>&t) {
 	// mozemo rotirati i uraditi horizontalnu
 	std::pair<int, int> s1 = {s.second, s.first}, t1 = {t.second, t.first};
 	std::pair<int, int> ret = horizontal_trisection(n, m, y, x, s1, t1);
@@ -237,7 +237,7 @@ inline bool is_corner_vertex(int x, int m) {
 	return !x || !(x - m + 1);
 }
 
-inline bool connected_by_non_boundary_edge(std::pair<int, int>& s, std::pair<int, int>& t, int m, int n) {
+inline bool connected_by_non_boundary_edge(const std::pair<int, int>& s, const std::pair<int, int>& t, int m, int n) {
 	// ovo implicira da je matrica 2xm ili nx2
 	// za 2xm je ovo ispunjeno ako su ime iste x-koordinate, razlicite y-koordinate i x > 0 i x < m - 1
 	// za nx2 slicno
@@ -248,13 +248,13 @@ inline bool connected_by_non_boundary_edge(std::pair<int, int>& s, std::pair<int
 	|| (m == 2 && s.first == t.first && !is_corner_vertex(s.first, n) && (s.second ^ t.second));
 }
 
-bool color_compatible(std::pair<int, int>& v1, std::pair<int, int>& v2, int width, int height) {
+bool color_compatible(const std::pair<int, int>& v1, const std::pair<int, int>& v2, int width, int height) {
 	int parity = (width % 2) && (height % 2);
 	return (!parity && ((v1.first + v1.second + v2.first + v2.second) % 2))
 		|| (parity && !((v1.first + v1.second) % 2) && !((v2.first + v2.second) % 2));
 }
 
-bool are_antipodes(std::pair<int, int>& v1, std::pair<int, int>& v2, int width, int height) {
+bool are_antipodes(const std::pair<int, int>& v1, const std::pair<int, int>& v2, int width, int height) {
 	return std::min(v1.first, v2.first) <= 1
 		&& std::min(v1.second, v2.second) <= 1
 		&& std::max(v1.first, v2.first) >= height - 2
@@ -393,7 +393,7 @@ std::pair<int, int> H_C_M2_CW(int m, int n, int x, int y) {
 	return ret;
 }
 
-peeling peel(std::pair<int, int>& s, std::pair<int, int>& t, int m, int n) {
+peeling peel(const std::pair<int, int>& s, const std::pair<int, int>& t, int m, int n) {
 	peeling r;
 
 	r.r1 = std::min(s.first, t.first) - 1;
@@ -433,7 +433,7 @@ inline std::pair<int, int> reflect_over_xy(int x, int y, int m, int n) {
 }
 
 
-std::pair<int, int> find_path_m5(int m, int n, int x, int y, std::pair<int, int>& s, std::pair<int, int>& t) {
+std::pair<int, int> find_path_m5(int m, int n, int x, int y, const std::pair<int, int>& s, const std::pair<int, int>& t) {
 	if(n >= 4 && (m > 3 || (m == 3 && !((s.first + s.second) % 2) ))) return horizontal_trisection(m, n, x, y, s, t);
 	
 	if(n >= 4) {
@@ -724,12 +724,58 @@ std::pair<int, int> find_path_m5(int m, int n, int x, int y, std::pair<int, int>
 	return {-2, -2};
 }
 
+inline bool connectable_left(int m, int n, const std::pair<int, int>& s, const std::pair<int, int>& t) {
+	// moze se povezati samo ako nije nesto od sledeceg:
+	// 1) 1xm
+	// 2) 2x2 i s == (0, 0) i t == (1, 0) ili t == (0, 0) i s == (1, 0)
+	return !(n == 1 || (m == 2 && n == 2 && !s.first && !s.second && t.first && !t.second)
+	|| (m == 2 && n == 2 && !t.first && !t.second && s.first && !s.second));
+}
+
+inline bool connectable_top(int m, int n, std::pair<int, int>& s, std::pair<int, int>& t) {
+	// svodimo na funkciju iznad preko rotacije
+	std::pair<int, int> s1 = {s.second, s.first}, t1 = {t.second, t.first};
+	return connectable_left(m, n, s1, t1);
+}
+
+inline bool connectable_right(int m, int n, const std::pair<int, int>& s, const std::pair<int, int>& t) {
+	auto s1 = reflect_over_y(s.second, s.first, m);
+	auto t1 = reflect_over_y(t.second, t.first, m);
+	return connectable_left(m, n, s1, t1);
+}
+
+
+inline bool connectable_bottom(int m, int n, const std::pair<int, int>& s, const std::pair<int, int>& t) {
+	auto s1 = reflect_over_x(s.second, s.first, n);
+	auto t1 = reflect_over_x(t.second, t.first, n);
+	return connectable_top(m, n, s1, t1);
+}
+
+inline bool m1_exists(const peeling& r) {
+	return r.r3 > 0;	
+}
+
+inline bool m2_exists(const peeling& r, int m) {
+	return r.r4 + 1 != m - 1;
+}
+
+inline bool m3_exists(const peeling &r) {
+	return r.r1 > 0;
+}
+
+inline bool m4_exists(const peeling &r, int n) {
+	return r.r2 + 1 != n - 1;
+}
+
+
 std::pair<int, int> hamiltonian_path_util(int m, int n, int x, int y, std::pair<int, int>& s, std::pair<int, int>& t, peeling& r) {
 	
 	// ako postoji u M5 i tacka je u M5, idi u M5
 	// inace specijalan slucaj...
 	std::pair<int, int> s1 = {s.first - r.r1 - 1, s.second - r.r3 - 1};
 	std::pair<int, int> t1 = {t.first - r.r1 - 1, t.second - r.r3 - 1};
+	int m1 = r.r4 - r.r3, n1 = r.r2 - r.r1;
+	
 	if(has_hamiltonian_path(s1, t1, m, n)) {
 		// ako su x i y u M5, racunaj u M5
 		if(x >= r.r3 + 1 && x <= r.r4 && y >= r.r1 + 1 && y <= r.r2) {
@@ -737,8 +783,122 @@ std::pair<int, int> hamiltonian_path_util(int m, int n, int x, int y, std::pair<
 			int y1 = y - r.r1 - 1;
 			auto ret = find_path_m5(r.r4 - r.r3, r.r2 - r.r1, x1, y1, s1, t1);
 			if(ret.first == -1 || ret.second == -1) return {-1, -1};
-		}	
 			
+			// treba videti prvo sa kojim se blokom povezujemo
+			// tacnije, proveriti redom da li moze M1, M3, M2 ili M4
+			// ako moze sa M1, idemo na njega i eventualno na M2
+			// ako moze na M3, idemo na njega i eventualno M4
+			// ako moze M2, to je to
+			// ako moze M4, to je to
+			
+			// sa M1 i M2 se povezujemo ako nema M3 i M4
+			// sa M3 i M4 ako nema ni M1 ni M2
+			if(m1_exists(r) && connectable_left(m1, n1, s1, t1)) {
+				// povezi sa M1
+				
+				// povezi sa M2 ako nema M3 i M4
+				if(!m3_exists(r) && !m4_exists(r, n1)) {
+					// povezi sa M2
+				}
+			} else if(m3_exists(r) && connectable_top(m1, n1, s1, t1)) {
+				// povezi sa M3
+				
+				// povezi sa M4 ako nema M1 i M2
+				if(!m1_exists && !m2_exists(r, m1)) {
+					// povezi sa M2
+				}
+			} else if(m2_exists(r, m1) && connectable_right(m1, n1, s1, t1)) {
+				// povezi sa M2
+				
+			} else {
+				// povezi sa M4
+			}
+			
+			ret.first += r.r1 + 1;
+			ret.second += r.r3 + 1;
+			return ret;
+		}
+		
+		// ako su x i y u M1
+		if(x <= r.r3) {
+			// povezi se sa putem ako je to moguce
+			if(connectable_left(m1, n1, s1, t1)) {
+				// povezi se sa putem
+			}
+			
+			if(m3_exists(r)) {
+				// povezi se sa M3
+			}
+				
+			if(m4_exists(r, n1)) {
+				// povezi se sa M4
+			}
+			
+		}
+		
+		// ako su u M3
+		if(y <= r.r1 && x <= r.r4 && x > r.r3) {
+			// povezi se sa putem ako je to moguce
+			if(!(m1_exists(r) && connectable_left(m1, n1, s1, t1))
+				&& connectable_top(m1, n1, s1, t1)) {
+				// povezi se sa putem
+			}
+			// povezi se sa M1 ako M1 postoji
+			if(m1_exists(r)) {
+				// povezi se sa M1
+			}
+				
+			if(m2_exists(r, m1)) {
+				// povezi se sa M2
+			}
+		}
+		
+		
+		// ako su u M2
+		if(x > r.r4) {
+			// povezi se sa putem ako niko pre nije to uradio
+			if(!(m1_exists(r) && connectable_left(m1, n1, s1, t1))
+				&& !(m3_exists(r) && connectable_top(m1, n1, s1, t1))
+				&& connectable_right(m1, n1, s1, t1)) {
+				// povezi se sa putem
+			} else if(!m3_exists(r) && !m4_exists(r, n1)) {
+				// povezi se sa putem
+				
+			}
+				
+			if(m3_exists(r)) {
+				// povezi se sa M3
+			}
+				
+			if(m4_exists(r, n1)) {
+				// povezi se sa M4
+			}
+			
+		}
+		
+		// ako su u M4
+		if(x > r.r3 && x <= r.r4 && y > r.r2) {
+			// povezi se sa putem ako niko pre nije to uradio
+			if(!(m1_exists(r) && connectable_left(m1, n1, s1, t1))
+				&& !(m3_exists(r) && connectable_top(m1, n1, s1, t1))
+				&& !(m2_exists(r, m1) && connectable_right(m1, n1, s1, t1))) {
+				// povezi se sa putem
+				
+			} else if(!m1_exists(r) && !m2_exists(r, m1)) {
+				// povezi se sa putem
+				
+			}
+			if(m2_exists(r, m1)) {
+				// povezi se sa M2
+			}
+				
+			if(m1_exists(r)) {
+				// povezi se sa M1
+			}
+		
+		}
+		
+		
 	} else {
 	
 	
@@ -761,6 +921,8 @@ std::pair<int, int> find_hamiltonian_path(int m, int n, int x, int y, std::pair<
 	
 	// ako nema puta, batali
 	if(!has_hamiltonian_path(s, t, m, n)) return {-1, -1};
+	
+	if(are_antipodes(s, t, m, n)) return find_path_m5(m, n, x, y, s, t);
 	
 	peeling r = peel(s, t, m, n);
 	
@@ -786,13 +948,12 @@ int main() {
 	std::cin >> m;
 	std::cout << "Unesi n: ";
 	std::cin >> n;
-
-	auto x = s;
-	for(int i = 0; i < n*m; i++) {
-		x = find_path_m5(m, n, x.second, x.first, s, t);
-		std::cout << x << '\n';
-	}
-
+	
+	std::cout
+		<< connectable_left(m, n, s, t) << '\n'
+		<< connectable_right(m, n, s, t) << '\n'
+		<< connectable_top(m, n, s, t) << '\n'
+		<< connectable_bottom(m, n, s, t) << '\n';
 
 	return 0;
 }
