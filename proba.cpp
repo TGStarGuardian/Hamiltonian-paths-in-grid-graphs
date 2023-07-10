@@ -1,5 +1,6 @@
 #include <iostream>
 #include <vector>
+#include <array>
 #include <chrono>
 
 
@@ -120,7 +121,7 @@ std::pair<int, int> path_2_m(int m, int x, int y, const std::pair<int, int>& s, 
 	}
 }
 
-std::pair<int, int> path_n_2(int m, int n, int x, int y, const std::pair<int, int>& s, const std::pair<int, int>& t) {
+std::pair<int, int> path_n_2(int n, int x, int y, const std::pair<int, int>& s, const std::pair<int, int>& t) {
 	// ako zamenimo mesta x i y, m i n i okrenemo koordinate s i t, dobijamo slucaj 2xm
 	std::pair<int, int> s1 = {s.second, s.first};
 	std::pair<int, int> t1 = {t.second, t.first};
@@ -410,15 +411,256 @@ peeling peel(std::pair<int, int>& s, std::pair<int, int>& t, int m, int n) {
 	return r;
 }
 
+constexpr inline int f(int y, int x) {
+	return x + 3*y;
+}
+
+constexpr inline std::pair<int, int> f_inv(int c) {
+	return {c / 3, c % 3};
+}
+
+inline std::pair<int, int> reflect_over_x(int x, int y, int n) {
+	return {n - 1 - y, x};
+}
+
+inline std::pair<int, int> reflect_over_y(int x, int y, int m) {
+	return {y, m - 1 - x};
+}
+
+inline std::pair<int, int> reflect_over_xy(int x, int y, int m, int n) {
+	return {n - 1 - y, m  - 1 - x};
+}
+
+
 std::pair<int, int> find_path_m5(int m, int n, int x, int y, std::pair<int, int>& s, std::pair<int, int>& t) {
 	// za n >= 4, radimo po horizontali
 	// za n < 4, radimo po vertikali
 	if(n >= 4) return horizontal_trisection(m, n, x, y, s, t);
-	else return vertical_trisection(m, n, x, y, s, t);
+	if(m >= 4) return vertical_trisection(m, n, x, y, s, t);
 	
-	// treba dodati i ostale slucajeve
-	// to cemo posle
-
+	// ovde je m < 4 i n < 4
+	// imamo slucajeve:
+	
+	// 1x2, 1x3, 2x1, 3x1
+	if(m == 1) {
+		// vracamo onaj desno (ako on nije poslednji)
+		if(y <= n - 1) return {y + 1, x};
+		else return {-1, -1};
+	}
+	
+	if(n == 1) {
+		if(x <= m - 1) return {y, x + 1};
+		else return {-1, -1};
+	}
+	
+	// 2x2, 2x3, 3x2 --> pozovemo funkciju za 2xm i nx2
+	if(n == 2) return path_2_m(m, x, y, s, t);
+	if(m == 2) return path_n_2(n, x, y, s, t);
+	
+	// 3x3
+	// s i t su beli, jer inace nema puta
+	// imamo 4 slucaja:
+	// 1) (0, 0) --> (2, 2) i varijacije
+	// 2) (0, 0) --> (2, 0) i varijacije
+	// 3) (0, 0) --> (1, 1) i varijacije
+	// 4) (1, 1) --> (0, 0) i varijacije
+	// konstruisemo 4 liste da obuhvate te slucajeve
+	// ostale svodimo izomorfnim transformacijama na ta 4 slucaja
+	// a[i] predstavlja sledeci element od {x, y} koji odgovara i
+	// numerisemo {x, y} brojevima od 0 do 8
+	// {0, 0} --> 0, {1, 0} --> 1, {2, 2} --> 8
+	// f(x, y) = x + 3y
+	std::array<int, 9> a1 = {f(1, 0), f(0, 2), f(1, 2), f(2, 0), f(0, 1), f(2, 2), f(2, 1), f(1, 1), f(0, -1)};
+	std::array<int, 9> a2 = {f(1, 0), f(0, 2), f(1, 2), f(1, 1), f(0, 1), f(2, 2), f(0, -1), f(2, 0), f(2, 1)};
+	std::array<int, 9> a3 = {f(1, 0), f(1, 1), f(0, 1), f(2, 0), f(0, -1), f(0, 2), f(2, 1), f(2, 2), f(1, 2)};
+	std::array<int, 9> a4 = {f(0, -1), f(0, 0), f(0, 1), f(2, 0), f(1, 0), f(0, 2), f(2, 1), f(2, 2), f(1, 2)};
+	
+	
+	if(!s.first && !s.second) {
+		// s je (0, 0)
+		// granamo po t
+		// t moze biti (0, 2), (2, 0), (1, 1) i (2, 2)
+		if(!t.second) {
+			// t je (2, 0)
+			// vracamo sledeci iz liste a2
+			return f_inv(a2[f(y, x)]);
+		}
+		
+		if(!t.first) {
+			// rotiramo listu a2
+			// (0, 0) ide u (1, 0), a trebalo bi u (0, 1)
+			// (1, 1) ide u (0, 1), a trebalo bi u (1, 0)
+			// (2, 2) ide u (2, 1), a trebalo bi u (1, 2)
+			// znaci, samo rotiramo, pa vadimo iz a2, pa rotiramo
+			auto ret = f_inv(a2[f(x, y)]);
+			if(ret.first == -1 || ret.second == -1) return {-1, -1};
+			return {ret.second, ret.first};
+		}
+		
+		if(t.first == 1 && t.second == 1) {
+			// vratimo sledeci iz a3
+			return f_inv(a3[f(y, x)]);
+		}
+		
+		if(t.first == 2 && t.second == 2) {
+			// vratimo sledeci iz a1
+			return f_inv(a1[f(y, x)]);
+		}
+		
+	} else if(!s.first) {
+		// s je (0, 2)
+		// t moze biti (0, 0), (1, 1), (2, 0) i (2, 2)
+		if(!t.first && !t.second) {
+			// t je (0, 0)
+			// ovo je kompozicija refleksije po y-osi i rotacije slucaja a2
+			// refleksijom se dobija s' = (0, 0), t' = (0, 2)
+			// a rotacijom s" = (0, 0), t" = (0, 0)
+			auto step1 = reflect_over_y(x, y, 3);
+			auto ret = f_inv(a2[f(step1.second, step1.first)]);
+			// opet rotiramo, pa reflektujemo
+			if(ret.first == -1 || ret.second == -1) return {-1, -1};
+			return reflect_over_y(ret.first, ret.second, 3);
+		}
+		
+		if(t.first == 2 && !t.second) {
+			// t je (2, 0)
+			// ovo je kompozicija rotacije i refleksije po x-osi slucaja a1
+			// rotacija daje s' = (2, 0), t' = (0, 2)
+			// refleksija daje s" = (0, 0), t"= (2, 2)
+			auto step1 = reflect_over_x(y, x, 3);
+			auto step2 = f_inv(a1[f(step1.first, step1.second)]);
+			if(step2.first == -1 || step2.second == -1) return {-1, -1};
+			auto ret = reflect_over_x(step2.second, step2.first, 3);
+			return {ret.second, ret.first};
+		}
+		
+		if(t.first == 1 && t.second == 1) {
+			// ovo je refleksija po y-osi slucaja a3
+			// s' = (0, 0), t' = (1, 1)
+			auto step1 = reflect_over_y(x, y, 3);
+			auto step2 = f_inv(a3[f(step1.first, step1.second)]);
+			if(step2.first == -1 || step2.second == -1) return {-1, -1};
+			return reflect_over_y(step2.second, step2.first, 3);
+		}
+		
+		if(t.first == 2 && t.second == 2) {
+			// ovo je refleksija po y-osi slucaja a2
+			// s' = (0, 0), t' = (2, 0)
+			auto step1 = reflect_over_y(x, y, 3);
+			auto step2 = f_inv(a2[f(step1.first, step1.second)]);
+			if(step2.first == -1 || step2.second == -1) return {-1, -1};
+			return reflect_over_y(step2.second, step2.first, 3);
+		}
+		
+	} else if(!s.second) {
+		// s je (2, 0)
+		// t moze biti (0, 0), (1, 1), (0, 2), (2, 2)
+		
+		if(!t.first && !t.second) {
+			// refleksija po x-osi slucaja a2
+			auto step1 = reflect_over_x(x, y, 3);
+			auto step2 = f_inv(a2[f(step1.first, step1.second)]);
+			if(step2.first == -1 || step2.second == -1) return {-1, -1};
+			return reflect_over_x(step2.second, step2.first, 3);
+		}
+		
+		if(!t.first && t.second == 2) {
+			// refleksija po x-osi slucaja a1
+			auto step1 = reflect_over_x(x, y, 3);
+			auto step2 = f_inv(a1[f(step1.first, step1.second)]);
+			if(step2.first == -1 || step2.second == -1) return {-1, -1};
+			return reflect_over_x(step2.second, step2.first, 3);
+		}
+		
+		if(t.first == 1 && t.second == 1) {
+			// refleksija po x-osi slucaja a3
+			auto step1 = reflect_over_x(x, y, 3);
+			auto step2 = f_inv(a3[f(step1.first, step1.second)]);
+			if(step2.first == -1 || step2.second == -1) return {-1, -1};
+			return reflect_over_x(step2.second, step2.first, 3);
+		}
+		
+		if(t.first == 2 && t.second == 2) {
+			// refleksija po x-osi, pa onda rotacija slucaja a2
+			auto step1 = reflect_over_x(x, y, 3);
+			auto ret = f_inv(a2[f(step1.second, step1.first)]);
+			if(ret.first == -1 || ret.second == -1) return {-1, -1};
+			// opet rotiramo, pa reflektujemo
+			return reflect_over_x(ret.first, ret.second, 3);
+		}
+		
+	} else if(s.first == 1) {
+		// s je (1, 1)
+		// t moze biti (0, 0), (2, 0), (0, 2) i (2, 2)
+		
+		if(!t.first && !t.second) {
+			// slucaj a4
+			return f_inv(a4[f(y, x)]);
+		}
+		
+		if(!t.first) {
+			// refleksija po x-osi slucaja a4
+			auto step1 = reflect_over_y(x, y, 3);
+			auto step2 = f_inv(a4[f(step1.first, step1.second)]);
+			if(step2.first == -1 || step2.second == -1) return {-1, -1};
+			return reflect_over_y(step2.second, step2.first, 3);
+		}
+		
+		if(!t.second) {
+			// refleksija po y-osi slucaja a4
+			auto step1 = reflect_over_x(x, y, 3);
+			auto step2 = f_inv(a4[f(step1.first, step1.second)]);
+			if(step2.first == -1 || step2.second == -1) return {-1, -1};
+			return reflect_over_x(step2.second, step2.first, 3);
+		}
+		
+		if(t.first && t.second) {
+			// refleksija po x i refleksija po y-osi slucaja a4
+			// to je zapravo centralna simetrija
+			auto step1 = reflect_over_xy(x, y, 3, 3);
+			auto step2 = f_inv(a4[f(step1.first, step1.second)]);
+			if(step2.first == -1 || step2.second == -1) return {-1, -1};
+			return reflect_over_xy(step2.second, step2.first, 3, 3);
+		}
+		
+	} else {
+		// s je (2, 2)
+		// t moze biti (0, 0), (0, 2), (2, 0), (1, 1)
+		if(!t.first && !t.second) {
+			// centralna simetrija od a1
+			auto step1 = reflect_over_xy(x, y, 3, 3);
+			auto step2 = f_inv(a1[f(step1.first, step1.second)]);
+			if(step2.first == -1 || step2.second == -1) return {-1, -1};
+			return reflect_over_xy(step2.second, step2.first, 3, 3);
+		}
+		
+		if(!t.first) {
+			// centralna simetrija od a2
+			auto step1 = reflect_over_xy(x, y, 3, 3);
+			auto step2 = f_inv(a2[f(step1.first, step1.second)]);
+			if(step2.first == -1 || step2.second == -1) return {-1, -1};
+			return reflect_over_xy(step2.second, step2.first, 3, 3);
+		}
+		
+		if(!t.second) {
+			// centralna simetrija, pa rotacija slucaja a2
+			auto step1 = reflect_over_xy(x, y, 3, 3);
+			auto ret = f_inv(a2[f(step1.second, step1.first)]);
+			if(ret.first == -1 || ret.second == -1) return {-1, -1};
+			// opet rotiramo, pa reflektujemo
+			return reflect_over_xy(ret.first, ret.second, 3, 3);
+		}
+		
+		if(t.first && t.second) {
+			// centralna simetrija slucaja a3
+			auto step1 = reflect_over_xy(x, y, 3, 3);
+			auto step2 = f_inv(a3[f(step1.first, step1.second)]);
+			if(step2.first == -1 || step2.second == -1) return {-1, -1};
+			return reflect_over_xy(step2.second, step2.first, 3, 3);
+		}
+	}
+	
+	return {-2, -2};
 }
 
 std::pair<int, int> hamiltonian_path_util(int m, int n, int x, int y, std::pair<int, int>& s, std::pair<int, int>& t, peeling& r) {
@@ -483,52 +725,13 @@ int main() {
 	std::cin >> m;
 	std::cout << "Unesi n: ";
 	std::cin >> n;
-/*	
-	std::pair<int, int> x = s;
-	auto start = std::chrono::high_resolution_clock::now();
-	for(int i = 0; i < 2; i++) {
-		for(int j = 0; j < 1000000; j++) {
-			x = path_n_2(2, 1000000, x.second, x.first, s, t);
-			// std::cout << x << '\n';
-		}
-	}
-	auto stop = std::chrono::high_resolution_clock::now();
-	auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
-	std::cout << duration.count() << '\n';
-	std::cout << x << '\n';
-*/
-/*
-	for(int i = 0; i < n; i++) {
-		for(int j = 0; j < m; j++) {
-			std::cout << find_hamiltonian_path(m, n, j, i, s, t) << " ";
-		}
-		std::cout << '\n';
-	}
-	
+
 	auto x = s;
-	for(int i = 0; i < n; i++) {
-		for(int j = 0; j < m; j++) {
-			std::cout <<  (x = find_hamiltonian_path(m, n, x.second, x.first, s, t)) << '\n';
-		}
+	for(int i = 0; i < 9; i++) {
+		x = find_path_m5(m, n, x.second, x.first, s, t);
+		std::cout << x << '\n';
 	}
-	
-	*/
-	
-	std::cout << is_corner_vertex(m - 1, m) << '\n';
-	std::cout << connected_by_non_boundary_edge(s, t, m, n) << '\n';
-	std::cout << has_hamiltonian_path(s, t, m, n) << '\n';
-	
-	/*
-	auto start = std::chrono::high_resolution_clock::now();
-	auto x = s;
-	for(int i = 0; i < n; i++) {
-		for(int j = 0; j < m; j++) {
-			x = find_hamiltonian_path(m, n, x.second, x.first, s, t);
-		}
-	}
-	auto stop = std::chrono::high_resolution_clock::now();
-	auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
-	std::cout << duration.count() << '\n';
-	*/
+
+
 	return 0;
 }
