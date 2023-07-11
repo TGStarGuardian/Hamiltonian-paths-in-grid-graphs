@@ -756,7 +756,7 @@ inline bool m1_exists(const peeling& r) {
 }
 
 inline bool m2_exists(const peeling& r, int m) {
-	return r.r4 + 1 != m - 1;
+	return r.r4 + 1 < m - 1;
 }
 
 inline bool m3_exists(const peeling &r) {
@@ -764,7 +764,7 @@ inline bool m3_exists(const peeling &r) {
 }
 
 inline bool m4_exists(const peeling &r, int n) {
-	return r.r2 + 1 != n - 1;
+	return n - 1 > r.r2 + 1;
 }
 
 inline std::pair<int, int> connect_m1_m3(int, int, int, int, const std::pair<int, int>&, const std::pair<int, int>&, const peeling&);
@@ -811,7 +811,7 @@ std::pair<int, int> hamiltonian_path_util(int m, int n, int x, int y, std::pair<
 				// povezi sa M1
 				return connect_m5_m1(m1, n1, x, y, s1, t1, r);
 				// povezi sa M2 ako nema M3 i M4
-				if(!m3_exists(r) && !m4_exists(r, n1)) {
+				if(!m3_exists(r) && !m4_exists(r, n)) {
 					// povezi sa M2
 					return connect_m5_m2(m1, n1, x, y, s1, t1, r);
 				}
@@ -819,11 +819,11 @@ std::pair<int, int> hamiltonian_path_util(int m, int n, int x, int y, std::pair<
 				// povezi sa M3
 				return connect_m5_m3(m1, n1, x, y, s1, t1, r);
 				// povezi sa M4 ako nema M1 i M2
-				if(!m1_exists && !m2_exists(r, m1)) {
+				if(!m1_exists && !m2_exists(r, m)) {
 					// povezi sa M2
 					return connect_m5_m2(m1, n1, x, y, s1, t1, r);
 				}
-			} else if(m2_exists(r, m1) && connectable_right(m1, n1, s1, t1)) {
+			} else if(m2_exists(r, m) && connectable_right(m1, n1, s1, t1)) {
 				// povezi sa M2
 				return connect_m5_m2(m1, n1, x, y, s1, t1, r);
 			} else {
@@ -846,7 +846,7 @@ std::pair<int, int> hamiltonian_path_util(int m, int n, int x, int y, std::pair<
 				return connect_m1_m3(m, n, x, y, s1, t1, r);
 			}
 				
-			if(m4_exists(r, n1)) {
+			if(m4_exists(r, n)) {
 				// povezi se sa M4
 				return connect_m1_m4(m, n, x, y, s1, t1, r);
 			}
@@ -867,7 +867,7 @@ std::pair<int, int> hamiltonian_path_util(int m, int n, int x, int y, std::pair<
 				return connect_m3_m1(m, n, x, y, s1, t1, r);
 			}
 				
-			if(m2_exists(r, m1)) {
+			if(m2_exists(r, m)) {
 				// povezi se sa M2
 				return connect_m3_m2(m, n, x, y, s1, t1, r);
 			}
@@ -893,7 +893,7 @@ std::pair<int, int> hamiltonian_path_util(int m, int n, int x, int y, std::pair<
 				return connect_m2_m3(m, n, x, y, s1, t1, r);
 			}
 				
-			if(m4_exists(r, n1)) {
+			if(m4_exists(r, n)) {
 				// povezi se sa M4
 				return connect_m2_m4(m, n, x, y, s1, t1, r);
 			}
@@ -914,7 +914,7 @@ std::pair<int, int> hamiltonian_path_util(int m, int n, int x, int y, std::pair<
 				return connect_m4_m5(m, n, x, y, s1, t1, r);
 			}
 			
-			if(m2_exists(r, m1)) {
+			if(m2_exists(r, m)) {
 				// povezi se sa M2
 				return connect_m4_m2(m, n, x, y, s1, t1, r);
 			}
@@ -978,9 +978,9 @@ std::pair<int, int> connect_m5_m1(int m, int n, int x, int y, const std::pair<in
 		auto ret = find_path_m5(m, n, 0, 0, s, t);
 		if(ret.second || ret.first == -1) {
 			// ovde probamo da spojimo (1, 0) sa (0, 0) ili sa (2, 0)
-			ret = find_path_m5(m, n, 1, 0, s, t);
+			ret = find_path_m5(m, n, 0, 1, s, t);
 			if(ret.first == -1 || ret.second == -1) return ret;
-			if(ret.first) {
+			if(!ret.second) {
 				// povezujemo ovde
 				return {r.r1 + 2, r.r3};
 			}
@@ -990,7 +990,7 @@ std::pair<int, int> connect_m5_m1(int m, int n, int x, int y, const std::pair<in
 		auto ret = find_path_m5(m, n, 0, 0, s, t);
 		if(ret.second || ret.first == -1) {
 			// proveravamo da li je (1, 0) uspeo
-			ret = find_path_m5(m, n, 1, 0, s, t);
+			ret = find_path_m5(m, n, 0, 1, s, t);
 			if(ret.second || ret.first == -1) {
 				// nije ni (1, 0) uspeo
 				// tada sigurno uspeva (2, 0)
@@ -1034,7 +1034,7 @@ std::pair<int, int> connect_m5_m4(int m, int n, int x, int y, const std::pair<in
 	// treba promenu propagirati i na peeling
 	peeling R{n - 1 - r.r1, n - 1 - r.r2, r.r3, r.r4};
 	std::pair<int, int> s1 = reflect_over_x(s.second, s.first, n), t1 = reflect_over_x(t.second, t.first, n);
-	auto ret = connect_m5_m1(m, n, x, n - 1 - y, s1, t1, R);
+	auto ret = connect_m5_m3(m, n, x, n - 1 - y, s1, t1, R);
 	if(ret.first == -1 || ret.second == -1) return {-1, -1};
 	return reflect_over_x(ret.second, ret.first, n);
 }
@@ -1058,11 +1058,11 @@ std::pair<int, int> connect_m1_m5(int m, int n, int x, int y, const std::pair<in
 		return H_C_M1_M3_CCW(r.r3 + 1, n, x, y);
 	} else {
 		// probamo sa (1, 0)
-		ret = find_path_m5(m1, n1, 1, 0, s, t);
+		ret = find_path_m5(m1, n1, 0, 1, s, t);
 		if(!ret.second && !ret.first) {
 			// CW orijentacija
 			// ovaj sto je na (r.r1 + 1, r.r3) ide desno
-			if(x == r.r3 && y == r.r1 + 2) return {y, x + 1};
+			if(x == r.r3 && y == r.r1 + 1) return {y, x + 1};
 			// ako M3 postoji, onda (0, r.r3) kaci desno
 			if(m3_exists(r) && x == r.r3 && !y) return {y, x + 1};
 			// ako M4 postoji, onda (n - 2, r.r3) kaci desno
@@ -1079,7 +1079,7 @@ std::pair<int, int> connect_m1_m5(int m, int n, int x, int y, const std::pair<in
 			return H_C_M1_M3_CCW(r.r3 + 1, n, x, y);
 		} else {
 			// ispitamo (2, 0)
-			ret = find_path_m5(m1, n1, 2, 0, s, t);
+			ret = find_path_m5(m1, n1, 0, 2, s, t);
 			if(ret.first == 3) {
 				if(x == r.r3 && y == r.r1 + 4) return {y, x + 1};
 				// ako M3 postoji, onda (1, r.r3) kaci desno
@@ -1104,7 +1104,8 @@ std::pair<int, int> connect_m1_m5(int m, int n, int x, int y, const std::pair<in
 std::pair<int, int> connect_m2_m5(int m, int n, int x, int y, const std::pair<int, int>& s, const std::pair<int, int>& t, const peeling& r) {
 	// svodimo na M1 pomocu refleksije u odnosu na y-osu
 	peeling R{r.r1, r.r2, m - 1 - r.r3, m - 1 - r.r4};
-	std::pair<int, int> s1 = reflect_over_y(s.second, s.first, m), t1 = reflect_over_y(t.second, t.first, m);
+	int m1 = r.r4 - r.r3;
+	std::pair<int, int> s1 = reflect_over_y(s.second, s.first, m1), t1 = reflect_over_y(t.second, t.first, m1);
 	auto ret = connect_m1_m5(m, n, m - 1 - x, y, s1, t1, R);
 	if(ret.first == -1 || ret.second == -1) return {-1, -1};
 	return reflect_over_y(ret.second, ret.first, m);
@@ -1115,6 +1116,7 @@ std::pair<int, int> connect_m3_m5(int m, int n, int x, int y, const std::pair<in
 	// treba promenu propagirati i na peeling
 	peeling R{r.r3, r.r4, r.r1, r.r2};
 	std::pair<int, int> s1 = {s.second, s.first}, t1 = {t.second, t.first};
+	std::cout << s1 << " " << t1 << '\n';
 	auto ret = connect_m1_m5(n, m, y, x, s, t, R);
 	if(ret.first == -1 || ret.second == -1) return {-1, -1};
 	return {ret.second, ret.first};
@@ -1124,7 +1126,8 @@ std::pair<int, int> connect_m4_m5(int m, int n, int x, int y, const std::pair<in
 	// ovo se svodi na povezivanje sa M3 ako se reflektuje po x-osi
 	// treba promenu propagirati i na peeling
 	peeling R{n - 1 - r.r1, n - 1 - r.r2, r.r3, r.r4};
-	std::pair<int, int> s1 = reflect_over_x(s.second, s.first, n), t1 = reflect_over_x(t.second, t.first, n);
+	int n1 = r.r2 - r.r1;
+	std::pair<int, int> s1 = reflect_over_x(s.second, s.first, n1), t1 = reflect_over_x(t.second, t.first, n1);
 	auto ret = connect_m3_m5(m, n, x, n - 1 - y, s1, t1, R);
 	if(ret.first == -1 || ret.second == -1) return {-1, -1};
 	return reflect_over_x(ret.second, ret.first, n);
@@ -1141,7 +1144,7 @@ std::pair<int, int> connect_m1_m3(int m, int n, int x, int y, const std::pair<in
 		// M1 ceka M3
 		// proverimo tacku (0, r.r3 + 1) od M3
 		// ako je izasla levo, onda (1, r.r3) izlazi desno
-		auto ret = connect_m3_m5(m, n, x, y, s, t, r);
+		auto ret = connect_m3_m5(m, n, r.r3 + 1, 0, s, t, r);
 		if(ret.second == r.r3 + 2) {
 			// tacka ide desno, tj. (1, r.r3 + 1) ide levo
 			// CW
@@ -1195,7 +1198,7 @@ std::pair<int, int> connect_m3_m1(int m, int n, int x, int y, const std::pair<in
 	if(connectable_left(m, n, s1, t1)) {
 		// M3 ceka M1
 		// posmatramo ugao (0, r.r3)
-		auto ret = connect_m1_m5(m, n, 0, r.r3, s, t, r);
+		auto ret = connect_m1_m5(m, n, r.r3, 0, s, t, r);
 		if(ret.second == r.r3 + 1) {
 			// ide desno, orijentacija je CW
 			// tacku (1, r.r3 + 1) okrecemo levo
@@ -1230,7 +1233,7 @@ std::pair<int, int> connect_m3_m2(int m, int n, int x, int y, const std::pair<in
 	} else {
 		// M3 ceka M2
 		// proveravamo tacku (0, r.r4 + 1)
-		auto ret = connect_m2_m3(m, n, 0, r.r4 + 1, s, t, r);
+		auto ret = connect_m2_m3(m, n, r.r4 + 1, 0, s, t, r);
 		if(ret.second == r.r4 + 2) {
 			// ide desno, orijentacija je CW
 			if(x == r.r4 && !y) return {y, x + 1};
@@ -1251,7 +1254,7 @@ std::pair<int, int> connect_m2_m3(int m, int n, int x, int y, const std::pair<in
 	if((m1_exists(r) && connectable_left(m, n, s1, t1)) || connectable_top(m, n, s1, t1)) {
 		// M2 ceka M3
 		// proveravamo tacku (0, r.r4)
-		auto ret = connect_m3_m2(m, n, 0, r.r4, s, t, r);
+		auto ret = connect_m3_m2(m, n, r.r4, 0, s, t, r);
 		if(ret.second == r.r4 + 1) {
 			// ide desno, orijentacija je CW
 			// tacku ispod saljemo levo
@@ -1289,7 +1292,7 @@ std::pair<int, int> connect_m2_m4(int m, int n, int x, int y, const std::pair<in
 	if((m1_exists(r) && (connectable_left(m, n, s1, t1) || m3_exists(r))) || (!m1_exists(r) && !m3_exists(r) && !connectable_right(m, n, s1, t1))) {
 		// M2 ceka M4
 		// proveravamo tacku (n-1, r.r4)
-		auto ret = connect_m4_m2(m, n, n - 1, r.r4, s, t, r);
+		auto ret = connect_m4_m2(m, n, r.r4, n - 1, s, t, r);
 		if(ret.second == r.r4 + 1) {
 			// ide desno, orijentacija je CW
 			if(x == r.r4 + 1 && y == n - 1) return {y, x - 1};
@@ -1323,7 +1326,7 @@ std::pair<int, int> connect_m4_m1(int m, int n, int x, int y, const std::pair<in
 	std::pair<int, int> s1 = {s.first + r.r1 + 1, s.second + r.r3 + 1}, t1 = {t.first + r.r1 + 1, t.second + r.r3 + 1};
 	if(connectable_left(m, n, s1, t1) || (m3_exists(r) && connectable_top(m, n, s1, t1))) {
 		// proveravamo (n - 1, r.r3) od M1
-		auto ret = connect_m1_m4(m, n, n - 1, r.r3, s, t, r);
+		auto ret = connect_m1_m4(m, n, r.r3, n - 1, s, t, r);
 		if(ret.second == r.r3 + 1) {
 			// ide desno, orijentacija je CCW
 			if(x == r.r3 + 1 && y == n - 2) return {y, x - 1};
@@ -1366,7 +1369,7 @@ std::pair<int, int> connect_m4_m2(int m, int n, int x, int y, const std::pair<in
 	} else {
 		// M4 ceka M2
 		// ispitamo tacku (n - 1, r.r4 + 1)
-		auto ret = connect_m2_m4(m, n, n - 1, r.r4 + 1, s, t, r);
+		auto ret = connect_m2_m4(m, n, r.r4 + 1, n - 1, s, t, r);
 		if(ret.second == r.r4 + 2) {
 			// ide desno, orijentacija je CCW
 			if(x == r.r4 && y == n - 1) return {y, x + 1};
@@ -1398,11 +1401,15 @@ int main() {
 	std::cout << "Unesi n: ";
 	std::cin >> n;
 	
-	std::cout
-		<< connectable_left(m, n, s, t) << '\n'
-		<< connectable_right(m, n, s, t) << '\n'
-		<< connectable_top(m, n, s, t) << '\n'
-		<< connectable_bottom(m, n, s, t) << '\n';
+	// find_hamiltonian_path(int m, int n, int x, int y, std::pair<int, int>& s, std::pair<int, int>& t)
+	auto x = s;
+	
+	for(int i = 0; i < n*m; i++) {
+		std::cout << x << '\n';
+		x = find_hamiltonian_path(m, n, x.second, x.first, s, t);
+	}
+	
+	std::cout << x << '\n';
 
 	return 0;
 }
