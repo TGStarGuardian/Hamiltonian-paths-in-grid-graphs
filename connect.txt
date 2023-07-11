@@ -1,0 +1,128 @@
+M5:
+1) poveži sa M1 sa uslovima da M1 postoji i moguće je povezati se levo
+2) poveži sa M2 sa uslovima da M1 postoji, moguće je povezati se levo, M3 ne postoji i M4 ne postoji
+3) poveži se sa M3 sa uslovima da nije moguće povezati se sa M1, M3 postoji i moguće je povezati se gore
+4) poveži se sa M4 sa uslovima da M3 postoji, moguće je povezati se gore, M1 i M2 ne postoje
+5) poveži se sa M2 sa uslovima da nije moguće povezati se sa M1 i M3
+6) poveži se sa M4 sa uslovima da nije moguće povezati se sa M1, M2, M3
+
+M1:
+1) poveži se sa M5 sa uslovima da M1 postoji i moguće je povezati se levo
+2) poveži se sa M3 sa uslovima da M3 postoji
+3) poveži se sa M4 sa uslovima da M4 postoji
+
+M3:
+1) poveži se sa uslovima da nije moguće povezati M1 sa M5 i moguće je povezati se gore
+2) poveži se sa M1 sa uslovima da M1 postoji
+3) poveži se sa M2 sa uslovima da M2 postoji
+
+M2:
+1) poveži se sa putem sa uslovima da nije moguće povezati M1 i M3 sa M5
+2) poveži se sa putem sa uslovima da M3 i M4 ne postoje, ali je bilo moguće povezati put sa M1 (jer M3 ne postoji)
+3) poveži se sa M3 sa uslovima da M3 postoji
+4) poveži se sa M4 sa uslovima da M4 postoji
+
+M4:
+1) poveži se sa putem sa uslovima da nije moguće povezati M1, M3 i M2 sa M5
+2) poveži se sa putem sa uslovima da M1 i M2 ne postoje, ali je bilo moguće povezati M5 sa M3
+3) poveži se sa M2 sa uslovima da M2 postoji
+4) poveži se sa M1 sa uslovima da M1 postoji
+
+M5.1 <--> M1.1
+M5.2 <--> M2.2
+M5.3 <--> M3.1
+M5.4 <--> M4.2
+M5.5 <--> M2.1
+M5.6 <--> M4.1
+
+M1.2 <--> M3.2
+M1.3 <--> M4.4
+
+M2.3 <--> M3.3
+M2.4 <--> M4.3
+
+Ostaje da se objasni kako se radi povezivanje.
+Mora se uspostaviti poredak u odnosu na koji se radi. Svaki blok zavisi od drugih blokova kada se povezuje.
+M5 ne zavisi od drugih blokova.
+
+M1:
+1) M1 zavisi od M5
+2) imamo 2 slučaja:
+	1) ako je M5 povezan sa M1, onda M1 ne zavisi od M3
+	2) M1 zavisi od M3
+3) imamo 2 slučaja:
+	1) ako je M1 ili M3 povezan sa M5, onda M1 ne zavisi od M4
+	2) M1 zavisi od M4
+
+M3:
+1) M3 zavisi od M5
+2) imamo 2 slučaja:
+	1) ako nije M1 povezan sa M5, onda M3 ne zavisi od M1
+	2) M3 zavisi od M1
+3) imamo 2 slučaja:
+	Ako je M1 povezan sa M5, onda M3 čeka M1, pa M2 čeka M3.
+	Ako je M3 povezan sa M5, onda M2 čeka M3.
+	Inače M3 čeka M2.
+	1) ako je M1 ili M3 povezan sa M5, onda M3 ne zavisi od M2
+	2) M3 zavisi od M2
+M2:
+1) M2 zavisi od M5
+2) M2 zavisi od M5
+3) imamo 2 slučaja:
+	1) ako je M1 ili M3 povezan sa M5, onda M2 zavisi od M3
+	2) M2 zavisi od M3
+4) imamo 2 slučaja:
+	Ako je M2 povezan sa M5, M4 zavisi od M2.
+	M4 čeka M1, ako M1 postoji; ili M1 čeka M4.
+	Ako M1 postoji i ne zavisi od M4, onda M2 zavisi od M4.
+	To je uslov: M1 postoji (dakle, onda je povezan sa M5).
+	Ako M1 ne postoji, onda gledamo da li postoji M3.
+	Ako postoji M3, onda je on povezan sa M5, pa M2 čeka M3, a M4 čeka M2.
+	1) ako M1 postoji ili M4 se povezao sa M5, M2 zavisi od M4
+	2) M4 zavisi od M2
+M4:
+1) M4 zavisi od M5
+2) M4 zavisi od M5
+3) isto kao u M1.3
+4) isto kao u M2.4
+
+Ispitajmo sada pod kojim uslovima važe relacije:
+M1 < M5 --> M1 je povezan sa M5
+M3 < M1 --> M1 je povezan sa M5
+M1 < M3 --> M1 nije povezan sa M5
+Dakle, ako M1 i M3 postoje i M1 se nije povezao sa M5, onda se M3 poveže sa M5.
+U tom slučaju M1 čeka na M3, tj. važi M1 < M3 < M5.
+Ako se povezao sa M1, onda M3 čeka, pa je M3 < M1 < M5.
+M4 < M1 ako se M1 ili M3 povezao sa M5
+M1 < M4 ako se M2 povezao sa M5 (ne može M4 ovde, jer postoje M1 i M2)
+M2 < M3 ako se M1 ili M3 povezao sa M5
+M3 < M2 ako se M2 povezao sa M5 (ne može M4 ovde, jer postoje M2 i M3)
+
+
+
+M1 <--> M3:
+M3 čeka M1 akko je M1 povezan sa M5
+M1 <--> M4:
+M4 čeka M1 akko se M1 ili M3 povezao sa M5
+M2 <--> M3:
+M2 čeka M3 akko se M1 ili M3 povezao sa M5
+M2 <--> M4:
+M2 čeka M4 akko (M1 postoji i M2 nije povezan sa M5) ili se M4 povezao sa M5
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

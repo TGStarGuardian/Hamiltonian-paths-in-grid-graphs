@@ -1,0 +1,27 @@
+// peeling operation returns 4 integers denoting the horizontal and vertical cuts
+		// r1, r2, r3, r4
+		// r1 --> horizontal top
+		// r2 --> horizontal bottom
+		// r3 --> vertical left
+		// r4 --> vertical right
+		// M1 --> (0 - _height - 1)x(0 - r3)
+		// M2 --> (0 - _height - 1)x(r4+1 - _width - 1)
+		// M3 --> (0 - r1)x(r3+1 - r4)
+		// M4 --> (r2+1 - _height - 1)x(r3+1 - r4)
+		// M5 --> (r1+1 - r2)x(r3+1 - r4)
+
+		// s and t should be color-compatible in M5
+		// if M5 is even, s and t should have a different colour
+		// if M5 is odd, then they should both be white
+		// s and t should be antipodes in M5
+		// since s is on the left, it means that s.second <= r3 + 2
+		// --> r3 >= s.second - 2
+		// since t is on the right, it means that t.second >= r4 - 1
+		// --> r4 <= t.second + 1
+		// (x, y) has coordinates (x - r1 - 1, y - r3 - 1) in M5
+		// M5 is odd <--> (r2 - r1) % 2 && (r4 - r3) % 2
+		// when M5 is odd, s and t are white in M5
+		// --> s.first - r1 - 1 + s.second - r3 - 1 = 0 (mod 2)
+		// --> s.first + s.second - (r1 + r3) = 0 (mod 2)
+		// --> s.first + s.second = r1 + r3 (mod 2)
+		// t.first + t.second = r1 + r3 (mod 2)
