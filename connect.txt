@@ -90,7 +90,7 @@ Ispitajmo sada pod kojim uslovima važe relacije:
 M1 < M5 --> M1 je povezan sa M5
 M3 < M1 --> M1 je povezan sa M5
 M1 < M3 --> M1 nije povezan sa M5
-Dakle, ako M1 i M3 postoje i M1 se nije povezao sa M5, onda se M3 poveže sa M5.
+Dakle, ako M1 i M3 postoje i M1 se nije povezao sa M5, onda se M3 poveže sa M5
 U tom slučaju M1 čeka na M3, tj. važi M1 < M3 < M5.
 Ako se povezao sa M1, onda M3 čeka, pa je M3 < M1 < M5.
 M4 < M1 ako se M1 ili M3 povezao sa M5
@@ -109,6 +109,47 @@ M2 čeka M3 akko se M1 ili M3 povezao sa M5
 M2 <--> M4:
 M2 čeka M4 akko (M1 postoji i M2 nije povezan sa M5) ili se M4 povezao sa M5
 
+Ideja: kritične tačke su one na kojima se potencijalno dešava vezivanje.
+Te tačke izdvojimo i obrađujemo ih zasebno, a ostale samo prate orijentaciju.
+Ispitujemo pod kojim uslovima je CCW orijentacija u M1, M2, M3 i M4.
+
+Imamo nekoliko slučajeva:
+1) (0, 0), (1, 0) ili (2, 0) u M5 ide na dole (kada se veže sa M1) i n1 >= 3 (M1 --> M5)
+2) (0, 0) ili (1, 0) u M5 ide na dole i n1 == 2 (M1 --> M5)
+3) (0, 0), (0, 1) ili (0, 2) ide desno u M5 i m1 >= 3 i M3 postoji (M3 --> M5)
+4) (0, 0), (0, 1) ide desno u M5 i m1 == 2 i M3 postoji (M3 --> M5)
+5) M3 ne postoji, M2 postoji i (1, m1 - 2) ide gore u M5 i (0, m1 - 1) ne ide dole u M5 i n1 >= 3 (M2 --> M5)
+6) M3 ne postoji, M2 postoji i (1, m1 - 2) ide gore u M5 i (0, m1 - 1) ne ide dole u M5 i n1 == 2 (M2 --> M5)
+7) M2 i M3 ne postoje, M4 postoji, (n1 - 1, 0) ili (n1 - 1, 1) i (n1 - 1, 2) idu desno u M5 i n1 >= 3 (M4 --> M5)
+8) M2 i M3 ne postoje, M4 postoji, (n1 - 1, 0) ili (n1 - 1, 1) idu desno u M5 i n1 == 2 (M4 --> M5)
+
+U tim slučajevima je CCW orijentacija u M1, a inače je CW orijentacija.
+Za povezivanje sa M3 i M4 gledamo pravila za povezivanje.
+
+CCW orijentacija u M2 je u sledećim slučajevima:
+
+1) M1 postoji i CCW je u M1
+2) M1 ne postoji:
+2.1) (0, 0), (0, 1) ili (0, 2) ide desno u M5 i m1 >= 3 i M3 postoji (M3 --> M5)
+2.2) (0, 0), (0, 1) ide desno u M5 i m1 == 2 i M3 postoji (M3 --> M5)
+2.3) M3 se nije vezao za M5 i (1, m1 - 2) ide gore u M5 i (0, m1 - 1) ne ide dole u M5 i n1 >= 3 (M2 --> M5)
+2.4) M3 se nije vezao za M5, i (1, m1 - 2) ide gore u M5 i (0, m1 - 1) ne ide dole u M5 i n1 == 2 (M2 --> M5)
+2.5) M3 ne postoji, M4 postoji, (n1 - 1, 0) ili (n1 - 1, 1) i (n1 - 1, 2) idu desno u M5 i n1 >= 3 (M4 --> M5)
+2.6) M3 ne postoji, M4 postoji, (n1 - 1, 0) ili (n1 - 1, 1) idu desno u M5 i n1 == 2 (M4 --> M5)
+
+CCW orijentacija u M3 je u sledećim slučajevima:
+1) M1 postoji i CCW je u M1
+2) M2 postoji i CCW je u M2
+3) M1 i M2 ne postoje:
+3.1) (0, 0), (0, 1) ili (0, 2) ide desno u M5 i m1 >= 3 (M3 --> M5)
+3.2) (0, 0), (0, 1) ide desno u M5 i m1 == 2 (M3 --> M5)
+
+CCW orijentacija u M4 je u sledećim slučajevima:
+1) M1 postoji i CCW je u M1
+2) M3 postoji i CCW je u M2
+3) M1 i M3 ne postoje:
+3.1) (n1 - 1, 0) ili (n1 - 1, 1) i (n1 - 1, 2) idu desno u M5 i n1 >= 3 (M4 --> M5)
+3.2) (n1 - 1, 0) ili (n1 - 1, 1) i idu desno u M5 i n1 == 2 (M4 --> M5)
 
 
 
