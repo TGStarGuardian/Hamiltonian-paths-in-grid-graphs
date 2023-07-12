@@ -1004,7 +1004,7 @@ std::pair<int, int> connect_m5_m4(int m, int n, int x, int y, const peeling& r, 
 // i prima dve funkcije da obrade ta dva slucaja (f1, f2),
 // i prima dve funkcije da ispisu ciklus inace
 template<typename F, typename C>
-inline std::pair<int, int> connect_block(int m, int n, int x, int y, const peeling& r, const std::pair<int, int>& s, const std::pair<int, int>& t, bool b1, bool b2, bool orientation, F& f1, F& f2, C& cycle1, C& cycle2, int m1, int n1) {
+inline std::pair<int, int> connect_block(int m, int n, int x, int y, const peeling& r, const std::pair<int, int>& s, const std::pair<int, int>& t, bool b1, bool b2, bool orientation, F& f1, F& f2, C& cycle1, C& cycle2, int m1, int n1, int tx, int ty) {
 	
 	if(b1) {
 		return f1(m, n, r, orientation);
@@ -1015,9 +1015,9 @@ inline std::pair<int, int> connect_block(int m, int n, int x, int y, const peeli
 	}
 	
 	if(orientation) {
-		return cycle1(m1, n1, x, y);
+		return cycle1(m1, n1, x - tx, y - ty) + std::pair{ty, tx};
 	} else {
-		return cycle2(m1, n1, x, y);
+		return cycle2(m1, n1, x - tx, y - ty) + std::pair{ty, tx};
 	}	
 }
 
@@ -1055,9 +1055,9 @@ inline std::pair<int, int> connect_m4_m1(int m, int n, const peeling& r, bool or
 
 inline std::pair<int, int> connect_m2_m3(int m, int n, const peeling& r, bool orientation) {
 	if(orientation) {
-		return {0, r.r4 + 1};
+		return {0, r.r4};
 	} else {
-		return {1, r.r4 + 1};
+		return {1, r.r4};
 	}
 }
 
@@ -1071,17 +1071,17 @@ inline std::pair<int, int> connect_m2_m4(int m, int n, const peeling& r, bool or
 
 inline std::pair<int, int> connect_m3_m2(int m, int n, const peeling& r, bool orientation) {
 	if(orientation) {
-		return {1, r.r4};
+		return {1, r.r4 + 1};
 	} else {
-		return {0, r.r4};
+		return {0, r.r4 + 1};
 	}
 }
 
 inline std::pair<int, int> connect_m4_m2(int m, int n, const peeling& r, bool orientation) {
 	if(orientation) {
-		return {n - 1, r.r4};
+		return {n - 1, r.r4 + 1};
 	} else {
-		return {n - 2, r.r4};
+		return {n - 2, r.r4 + 1};
 	}
 }
 
@@ -1127,7 +1127,7 @@ inline bool not_connect_m5_cw(int x, int y, std::pair<int, int>& ret) {
 
 
 template<typename F, typename C, typename G, typename K, typename Cycle>
-inline std::pair<int, int> connect_to_path(int m, int n, int x, int y, const peeling& r, const std::pair<int, int>& s, const std::pair<int, int>& t, F& orient, C& connect_m5_ccw, C& connect_m5_cw, G& go, bool c1, bool c2, bool c3, bool c4, K& connect1, K& connect2, Cycle& cycle_ccw, Cycle& cycle_cw, int m1, int n1) {
+inline std::pair<int, int> connect_to_path(int m, int n, int x, int y, const peeling& r, const std::pair<int, int>& s, const std::pair<int, int>& t, F& orient, C& connect_m5_ccw, C& connect_m5_cw, G& go, bool c1, bool c2, bool c3, bool c4, K& connect1, K& connect2, Cycle& cycle_ccw, Cycle& cycle_cw, int m1, int n1, int tx, int ty) {
 	// treba odrediti orijentaciju
 	// a onda povezati sa M5
 	auto T = orient(m, n, r, s, t);
@@ -1142,7 +1142,7 @@ inline std::pair<int, int> connect_to_path(int m, int n, int x, int y, const pee
 			return go(x, y);
 		}
 		
-		return connect_block(m, n, x, y, r, s, t, c1, c2, true, connect1, connect2, cycle_ccw, cycle_cw, m1, n1);
+		return connect_block(m, n, x, y, r, s, t, c1, c2, true, connect1, connect2, cycle_ccw, cycle_cw, m1, n1, tx, ty);
 	
 	} else {
 		// ako je CW, onda povezujemo onu iznad desno
@@ -1151,7 +1151,7 @@ inline std::pair<int, int> connect_to_path(int m, int n, int x, int y, const pee
 			return go(x, y);
 		}
 		
-		return connect_block(m, n, x, y, r, s, t, c3, c4, false, connect1, connect2, cycle_ccw, cycle_cw, m1, n1);
+		return connect_block(m, n, x, y, r, s, t, c3, c4, false, connect1, connect2, cycle_ccw, cycle_cw, m1, n1, tx, ty);
 	}
 }
 
@@ -1164,29 +1164,178 @@ std::pair<int, int> hamiltonian_path_util(int m, int n, int x, int y, std::pair<
 	// inace specijalan slucaj...
 	
 	if(has_hamiltonian_path(s1, t1, m, n)) {
-		// ako su x i y u M5
-		if(x >= r.r3 + 1 and x <= r.r4 and y >= r.r1 + 1 and y <= r.r2) {
-			
+		if(m1_exists(r) and connectable_left(m1, n1, s1, t1)) {
+			// obradjujemo posebno svaki blok
+			if(x <= r.r3) {
+				// u M1 smo
+				return connect_to_path(m, n, x, y, r, s, t, find_orientation_m1, connect_m1_m5_ccw, connect_m1_m5_cw, go_right,
+				m3_exists(r) and x == r.r3 and y == 1,
+				m4_exists(r, n) and (!m2_exists(r, m) or !m3_exists(r)) and x == r.r3 and y == n - 1,
+				m3_exists(r) and x == r.r3 and !y,
+				m4_exists(r, n) and (!m2_exists(r, m) or !m3_exists(r)) and x == r.r3 and y == n - 2,
+				connect_m1_m3, connect_m1_m4, H_C_M1_M3_CCW, H_C_M1_CW, r.r3 + 1, n, 0, 0);
+			} else if(x > r.r4) {
+				// u M2 smo
+				// vezemo se za put samo ako M3 i M4 ne postoje
+				if(!m3_exists(r) and !m4_exists(r, n)) {
+					return connect_to_path(m, n, x, y, r, s, t, find_orientation_m1, connect_m2_m5_ccw, connect_m2_m5_cw, go_left,
+					false,
+					false,
+					false,
+					false,
+					connect_m2_m3, connect_m2_m4, H_C_M2_M4_CCW, H_C_M2_CW, m - r.r4 - 1, n, r.r4 + 1, 0);
+				} else {
+					return connect_to_path(m, n, x, y, r, s, t, find_orientation_m1, not_connect_m5_ccw, not_connect_m5_cw, go_left,
+					m3_exists(r) and x == r.r4 + 1 and !y,
+					m4_exists(r, n) and x == r.r4 + 1 and y == n - 2,
+					m3_exists(r) and x == r.r4 + 1 and y == 1,
+					m4_exists(r, n) and x == r.r4 + 1 and y == n - 1,
+					connect_m2_m3, connect_m2_m4, H_C_M2_M4_CCW, H_C_M2_CW, m - r.r4 - 1, n, r.r4 + 1, 0);
+				}
+			} else {
+				if(y <= r.r1) {
+					// u M3 smo
+					// vezemo se za put ako M1 i M2 ne postoje
+					if(!m1_exists(r) and !m2_exists(r, m)) {
+					return connect_to_path(m, n, x, y, r, s, t, find_orientation_m1, connect_m3_m5_ccw, connect_m3_m5_cw, go_down,
+					false,
+					false,
+					false,
+					false,
+					connect_m3_m1, connect_m3_m2, H_C_M1_M3_CCW, H_C_M3_CW, r.r4 - r.r3, r.r1 + 1, r.r3 + 1, 0);
+				} else {
+					return connect_to_path(m, n, x, y, r, s, t, find_orientation_m1, not_connect_m5_ccw, not_connect_m5_cw, go_down,
+					m1_exists(r) and x == r.r3 + 1 and !y,
+					m2_exists(r, m) and x == r.r4 and y == 1,
+					m1_exists(r) and x == r.r3 + 1 and y == 1,
+					m2_exists(r, m) and x == r.r4 and !y,
+					connect_m3_m1, connect_m3_m2, H_C_M1_M3_CCW, H_C_M3_CW, r.r4 - r.r3, r.r1 + 1, r.r3 + 1, 0);
+				}
+				} else if(y > r.r2) {
+					// u M4 smo
+					return connect_to_path(m, n, x, y, r, s, t, find_orientation_m1, not_connect_m5_ccw, not_connect_m5_cw, go_up,
+					m2_exists(r, m) and x == r.r4 and y == n - 1,
+					m1_exists(r) and (!m2_exists(r, m) or !m3_exists(r)) and x == r.r3 + 1 and y == n - 2,
+					m2_exists(r, m) and x == r.r4 and y == n - 2,
+					m1_exists(r) and (!m2_exists(r, m) or !m3_exists(r)) and x == r.r3 + 1 and y == n - 1,
+					connect_m4_m2, connect_m4_m1, H_C_M2_M4_CCW, H_C_M4_CW, r.r4 - r.r3, n - r.r2 - 1, r.r3 + 1, r.r2 + 1);
+					
+				} else {
+					// u M5 smo
+					return connect_m5_m1(m, n, x, y, r, s, t);
+				}
+			}
 		
-		}
+		} else if(m3_exists(r) and connectable_top(m1, n1, s1, t1)) {
+			// obradjujemo posebno svaki blok
+			if(x <= r.r3) {
+				// u M1 smo
+				return connect_to_path(m, n, x, y, r, s, t, find_orientation_m3, not_connect_m5_ccw, not_connect_m5_cw, go_right,
+				m3_exists(r) and x == r.r3 and y == 1,
+				m4_exists(r, n) and !m2_exists(r, m) and x == r.r3 and y == n - 1,
+				m3_exists(r) and x == r.r3 and !y,
+				m4_exists(r, n) and !m2_exists(r, m) and x == r.r3 and y == n - 2,
+				connect_m1_m3, connect_m1_m4, H_C_M1_M3_CCW, H_C_M1_CW, r.r3 + 1, n, 0, 0);
+			} else if(x > r.r4) {
+				// u M2 smo
+				return connect_to_path(m, n, x, y, r, s, t, find_orientation_m3, not_connect_m5_ccw, not_connect_m5_cw, go_left,
+				m3_exists(r) and ((m1_exists(r) and m4_exists(r, n)) or !m1_exists(r) or !m4_exists(r, n)) and x == r.r4 + 1 and !y,
+				m4_exists(r, n) and x == r.r4 + 1 and y == n - 2,
+				m3_exists(r) and ((m1_exists(r) and m4_exists(r, n)) or !m1_exists(r) or !m4_exists(r, n)) and x == r.r4 + 1 and y == 1,
+				m4_exists(r, n) and x == r.r4 + 1 and y == n - 1,
+				connect_m2_m3, connect_m2_m4, H_C_M2_M4_CCW, H_C_M2_CW, m - r.r4 - 1, n, r.r4 + 1, 0);
+				
+			} else {
+				if(y <= r.r1) {
+					// u M3 smo
+					// vezemo se za put
+					return connect_to_path(m, n, x, y, r, s, t, find_orientation_m3, connect_m3_m5_ccw, connect_m3_m5_cw, go_down,
+					m1_exists(r) and x == r.r3 + 1 and !y,
+					m2_exists(r, m) and ((m1_exists(r) and m4_exists(r, n)) or !m1_exists(r) or !m4_exists(r, n)) and x == r.r4 and y == 1,
+					m1_exists(r) and x == r.r3 + 1 and y == 1,
+					m2_exists(r, m) and ((m1_exists(r) and m4_exists(r, n)) or !m1_exists(r) or !m4_exists(r, n)) and x == r.r4 and !y,
+					connect_m3_m1, connect_m3_m2, H_C_M1_M3_CCW, H_C_M3_CW, r.r4 - r.r3, r.r1 + 1, r.r3 + 1, 0);
+				} else if(y > r.r2) {
+					// u M4 smo
+					return connect_to_path(m, n, x, y, r, s, t, find_orientation_m3, not_connect_m5_ccw, not_connect_m5_cw, go_up,
+					m2_exists(r, m) and x == r.r4 and y == n - 1,
+					m1_exists(r) and !m2_exists(r, m) and x == r.r3 + 1 and y == n - 2,
+					m2_exists(r, m) and x == r.r4 and y == n - 2,
+					m1_exists(r) and !m2_exists(r, m) and x == r.r3 + 1 and y == n - 1,
+					connect_m4_m2, connect_m4_m1, H_C_M2_M4_CCW, H_C_M4_CW, r.r4 - r.r3, n - r.r2 - 1, r.r3 + 1, r.r2 + 1);
+				} else {
+					// u M5 smo
+					return connect_m5_m3(m, n, x, y, r, s, t);
+				}
+			}
+		} else if(m2_exists(r, m) and connectable_right(m1, n1, s1, t1)) {
+			if(x <= r.r3) {
+				// M1 sigurno ne postoji u ovom slucaju
+				std::cout << "This is impossible!\n";
+			} else if(x > r.r4) {
+				// u M2 smo
+				return connect_to_path(m, n, x, y, r, s, t, find_orientation_m2, connect_m2_m5_ccw, connect_m2_m5_cw, go_left,
+				m3_exists(r) and x == r.r4 + 1 and !y,
+				m4_exists(r, n) and x == r.r4 + 1 and y == n - 2,
+				m3_exists(r) and x == r.r4 + 1 and y == 1,
+				m4_exists(r, n) and x == r.r4 + 1 and y == n - 1,
+				connect_m2_m3, connect_m2_m4, H_C_M2_M4_CCW, H_C_M2_CW, m - r.r4 - 1, n, r.r4 + 1, 0);
+				
+			} else {
+				if(y <= r.r1) {
+					// u M3 smo
+					return connect_to_path(m, n, x, y, r, s, t, find_orientation_m2, not_connect_m5_ccw, not_connect_m5_cw, go_down,
+					m1_exists(r) and x == r.r3 + 1 and !y,
+					m2_exists(r, m) and x == r.r4 and y == 1,
+					m1_exists(r) and x == r.r3 + 1 and y == 1,
+					m2_exists(r, m) and !m4_exists(r, n) and x == r.r4 and !y,
+					connect_m3_m1, connect_m3_m2, H_C_M1_M3_CCW, H_C_M3_CW, r.r4 - r.r3, r.r1 + 1, r.r3 + 1, 0);
+				} else if(y > r.r2) {
+					// u M4 smo
+					return connect_to_path(m, n, x, y, r, s, t, find_orientation_m2, not_connect_m5_ccw, not_connect_m5_cw, go_up,
+					m2_exists(r, m) and x == r.r4 and y == n - 1,
+					m1_exists(r) and !m3_exists(r) and x == r.r3 + 1 and y == n - 2,
+					m2_exists(r, m) and x == r.r4 and y == n - 2,
+					m1_exists(r) and !m3_exists(r) and x == r.r3 + 1 and y == n - 1,
+					connect_m4_m2, connect_m4_m1, H_C_M2_M4_CCW, H_C_M4_CW, r.r4 - r.r3, n - r.r2 - 1, r.r3 + 1, r.r2 + 1);
+				} else {
+					// u M5 smo
+					return connect_m5_m2(m, n, x, y, r, s, t);
+				}
+			}
 		
-		// ako su x i y u M1
-		if(x <= r.r3) {
-			return connect_to_path(m, n, x, y, r, s, t, find_orientation_m1, connect_m1_m5_ccw, connect_m1_m5_cw, go_right, m3_exists(r) and x == r.r3 and y == 1, m4_exists(r, n) and (!m2_exists(r, m) or !m3_exists(r)) and x == r.r3 and y == n - 1, m3_exists(r) and x == r.r3 and !y, m4_exists(r, n) and (!m2_exists(r, m) or !m3_exists(r)) and x == r.r3 and y == n - 2, connect_m1_m3, connect_m1_m4, H_C_M1_M3_CCW, H_C_M1_CW, r.r3 + 1, n);			
-
-		}
-		// ako su u M3
-		if(y <= r.r1 and x <= r.r4 and x > r.r3) {
-			
-		}
-		// ako su u M2
-		if(x > r.r4) {
-			
-		}
-		
-		// ako su u M4
-		if(x > r.r3 and x <= r.r4 and y > r.r2) {
-		
+		} else {
+			// povezujemo sa M4
+			if(x <= r.r3) {
+				// M1 sigurno ne postoji u ovom slucaju
+				std::cout << "This is impossible!\n";
+			} else if(x > r.r4) {
+				// u M2 smo
+				return connect_to_path(m, n, x, y, r, s, t, find_orientation_m4, not_connect_m5_ccw, not_connect_m5_cw, go_left,
+				false,
+				m4_exists(r, n) and x == r.r4 + 1 and y == n - 2,
+				false,
+				m4_exists(r, n) and x == r.r4 + 1 and y == n - 1,
+				connect_m2_m3, connect_m2_m4, H_C_M2_M4_CCW, H_C_M2_CW, m - r.r4 - 1, n, r.r4 + 1, 0);
+				
+			} else {
+				if(y <= r.r1) {
+					// u M3 smo
+					// M3 sigurno ne postoji
+					std::cout << "This is impossible!\n";
+				} else if(y > r.r2) {
+					// u M4 smo
+					return connect_to_path(m, n, x, y, r, s, t, find_orientation_m4, connect_m4_m5_ccw, connect_m4_m5_cw, go_up,
+					m2_exists(r, m) and x == r.r4 and y == n - 1,
+					m1_exists(r) and x == r.r3 + 1 and y == n - 2,
+					m2_exists(r, m) and x == r.r4 and y == n - 2,
+					m1_exists(r) and x == r.r3 + 1 and y == n - 1,
+					connect_m4_m2, connect_m4_m1, H_C_M2_M4_CCW, H_C_M4_CW, r.r4 - r.r3, n - r.r2 - 1, r.r3 + 1, r.r2 + 1);
+				} else {
+					// u M5 smo
+					return connect_m5_m4(m, n, x, y, r, s, t);
+				}
+			}
 		}
 		
 		
@@ -1242,13 +1391,19 @@ int main() {
 	
 	// find_hamiltonian_path(int m, int n, int x, int y, std::pair<int, int>& s, std::pair<int, int>& t)
 	auto x = s;
-	
+	/*
 	for(int i = 0; i < n; i++) {
 		for(int j = 0; j < m; j++) {
 			std::cout << find_hamiltonian_path(m, n, j, i, s, t) << " "; 
 		}
 		std::cout << '\n';
 	}
+	*/
+	
+	for(int i = 0; i < n*m; i++) {
+		x = find_hamiltonian_path(m, n, x.second, x.first, s, t);
+	}
+	
 	
 	std::cout << x << '\n';
 
