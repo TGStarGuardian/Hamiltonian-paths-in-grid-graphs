@@ -784,66 +784,6 @@ inline bool m4_exists(const peeling &r, int n) {
 }
 
 
-// funkcija koja je zaduzena za povezivanje/trazenje orijentacije
-// f1, f2, f3 i f4 obradjuju slucajeve za M1, M2, M3 i M4
-// imacemo po 2 funkcije za svaki od blokova
-// jednu sa strane M5, drugu sa strane tog bloka
-template<typename F>
-auto connect(int m, int n, int x, int y, const std::pair<int, int>& s, const std::pair<int, int>& t, const peeling &r, F& f1, F& f2, F& f3, F& f4) {
-	std::pair<int, int> s1 = {s.first - r.r1 - 1, s.second - r.r3 - 1};
-	std::pair<int, int> t1 = {t.first - r.r1 - 1, t.second - r.r3 - 1};
-	int m1 = r.r4 - r.r3;
-	int n1 = r.r2 - r.r1;
-	if(m1_exists(r) && connectable_left(m1, n1, s1, t1)) {
-		// povezi sa M1
-		return f1(m, n, x, y, r, s, t);
-		// povezi sa M2 ako nema M3 i M4
-		if(!m3_exists(r) && !m4_exists(r, n)) {
-			// povezi sa M2
-			return f2(m, n, x, y, r, s, t);
-		}
-	} else if(m3_exists(r) && connectable_top(m1, n1, s1, t1)) {
-		// povezi sa M3
-		return f3(m, n, x, y, r, s, t);
-		// povezi sa M4 ako nema M1 i M2
-		if(!m1_exists && !m2_exists(r, m)) {
-			// povezi sa M4
-			return f4(m, n, x, y, r, s, t);
-		}
-	} else if(m2_exists(r, m) && connectable_right(m, n, s1, t1)) {
-		// povezi sa M2
-		return f2(m, n, x, y, r, s, t);
-	} else {
-		// povezi sa M4
-		return f4(m, n, x, y, r, s, t);
-	}
-}
-
-// kada blok dodje do toga da se on
-// ili drugi blok povezao na M5, mora da nadje
-// orijentaciju i da se poveze sa odgovarajucim blokovima
-// u toj orijentaciji
-template<typename F>
-std::pair<int, int> connect_block(int m, int n, int x, int y, const peeling& r, bool f1, bool f2, bool orientation, F& s1, F& s2) {
-	// spajanje se moze opisati kao:
-	// 1) proveri da li mozes sa susednim1
-	// 2) proveri da li mozes sa susednim2
-	// nakon svake provere ide spajanje
-	
-	if(f1) {
-		// npr. za M1 i M3
-		// potrebno je da znamo m, n, r
-		// ako znamo orijentaciju, onda je posao lak
-		// zato cemo racunati na to da imamo i orijentaciju
-		return s1(m, n, r, orientation);
-	}
-	
-	if(f2) {
-		return s2(m, n, r, orientation);
-	}
-	
-}
-
 // trazenje orijentacije pomocu M1
 std::pair<bool, std::pair<int, int>> find_orientation_m1(int m, int n, const peeling& r, const std::pair<int, int>& s, const std::pair<int, int>& t) {
 	std::pair<int, int> s1 = {s.first - r.r1 - 1, s.second - r.r3 - 1};
@@ -1058,6 +998,162 @@ std::pair<int, int> connect_m5_m4(int m, int n, int x, int y, const peeling& r, 
 	}
 }
 
+// funkcija prima parametre vezane za mrezu,
+// dve bool vrednosti kojima odredjuje kada je u kriticnoj tacki
+// i da li se povezuje sa susedima
+// i prima dve funkcije da obrade ta dva slucaja (f1, f2),
+// i prima dve funkcije da ispisu ciklus inace
+template<typename F, typename C>
+inline std::pair<int, int> connect_block(int m, int n, int x, int y, const peeling& r, const std::pair<int, int>& s, const std::pair<int, int>& t, bool b1, bool b2, bool orientation, F& f1, F& f2, C& cycle1, C& cycle2, int m1, int n1) {
+	
+	if(b1) {
+		return f1(m, n, r, orientation);
+	}
+	
+	if(b2) {
+		return f2(m, n, r, orientation);
+	}
+	
+	if(orientation) {
+		return cycle1(m1, n1, x, y);
+	} else {
+		return cycle2(m1, n1, x, y);
+	}	
+}
+
+inline std::pair<int, int> connect_m1_m3(int m, int n, const peeling& r, bool orientation) {
+	if(orientation) {
+		return {1, r.r3 + 1};
+	} else {
+		return {0, r.r3 + 1};
+	}
+}
+
+inline std::pair<int, int> connect_m1_m4(int m, int n, const peeling& r, bool orientation) {
+	if(orientation) {
+		return {n - 1, r.r3 + 1};
+	} else {
+		return {n - 2, r.r3 + 1};
+	}
+}
+
+inline std::pair<int, int> connect_m3_m1(int m, int n, const peeling& r, bool orientation) {
+	if(orientation) {
+		return {0, r.r3};
+	} else {
+		return {1, r.r3};
+	}
+}
+
+inline std::pair<int, int> connect_m4_m1(int m, int n, const peeling& r, bool orientation) {
+	if(orientation) {
+		return {n - 2, r.r3};
+	} else {
+		return {n - 1, r.r3};
+	}
+}
+
+inline std::pair<int, int> connect_m2_m3(int m, int n, const peeling& r, bool orientation) {
+	if(orientation) {
+		return {0, r.r4 + 1};
+	} else {
+		return {1, r.r4 + 1};
+	}
+}
+
+inline std::pair<int, int> connect_m2_m4(int m, int n, const peeling& r, bool orientation) {
+	if(orientation) {
+		return {n - 2, r.r4};
+	} else {
+		return {n - 1, r.r4};
+	}
+}
+
+inline std::pair<int, int> connect_m3_m2(int m, int n, const peeling& r, bool orientation) {
+	if(orientation) {
+		return {1, r.r4};
+	} else {
+		return {0, r.r4};
+	}
+}
+
+inline std::pair<int, int> connect_m4_m2(int m, int n, const peeling& r, bool orientation) {
+	if(orientation) {
+		return {n - 1, r.r4};
+	} else {
+		return {n - 2, r.r4};
+	}
+}
+
+inline bool connect_m1_m5_ccw(int x, int y, std::pair<int, int>& ret) {
+	return x == ret.second and y == ret.first + 1;
+}
+
+inline bool connect_m1_m5_cw(int x, int y, std::pair<int, int>& ret) {
+	return x == ret.second and y == ret.first - 1;
+}
+
+inline bool connect_m2_m5_ccw(int x, int y, std::pair<int, int>& ret) {
+	return x == ret.second and y == ret.first - 1;
+}
+
+inline bool connect_m2_m5_cw(int x, int y, std::pair<int, int>& ret) {
+	return x == ret.second and y == ret.first + 1;
+}
+
+inline bool connect_m3_m5_ccw(int x, int y, std::pair<int, int>& ret) {
+	return x == ret.second - 1 and y == ret.first;
+}
+
+inline bool connect_m3_m5_cw(int x, int y, std::pair<int, int>& ret) {
+	return x == ret.second + 1 and y == ret.first;
+}
+
+inline bool connect_m4_m5_ccw(int x, int y, std::pair<int, int>& ret) {
+	return x == ret.second + 1 and y == ret.first;
+}
+
+inline bool connect_m4_m5_cw(int x, int y, std::pair<int, int>& ret) {
+	return x == ret.second - 1 and y == ret.first;
+}
+
+inline bool not_connect_m5_ccw(int x, int y, std::pair<int, int>& ret) {
+	return false;
+}
+
+inline bool not_connect_m5_cw(int x, int y, std::pair<int, int>& ret) {
+	return false;
+}
+
+
+template<typename F, typename C, typename G, typename K, typename Cycle>
+inline std::pair<int, int> connect_to_path(int m, int n, int x, int y, const peeling& r, const std::pair<int, int>& s, const std::pair<int, int>& t, F& orient, C& connect_m5_ccw, C& connect_m5_cw, G& go, bool c1, bool c2, bool c3, bool c4, K& connect1, K& connect2, Cycle& cycle_ccw, Cycle& cycle_cw, int m1, int n1) {
+	// treba odrediti orijentaciju
+	// a onda povezati sa M5
+	auto T = orient(m, n, r, s, t);
+	auto orientation = T.first;
+	auto ret = T.second;
+	
+	if(orientation) {
+		// ako je CCW, onda povezujemo onu ispod ret desno
+		// if(x == ret.second and y == ret.first + 1) return go_right(x, y);
+		
+		if(connect_m5_ccw(x, y, ret)) {
+			return go(x, y);
+		}
+		
+		return connect_block(m, n, x, y, r, s, t, c1, c2, true, connect1, connect2, cycle_ccw, cycle_cw, m1, n1);
+	
+	} else {
+		// ako je CW, onda povezujemo onu iznad desno
+		//if(x == ret.second && y == ret.first - 1) return go_right(x, y);
+		if(connect_m5_cw(x, y, ret)) {
+			return go(x, y);
+		}
+		
+		return connect_block(m, n, x, y, r, s, t, c3, c4, false, connect1, connect2, cycle_ccw, cycle_cw, m1, n1);
+	}
+}
 
 std::pair<int, int> hamiltonian_path_util(int m, int n, int x, int y, std::pair<int, int>& s, std::pair<int, int>& t, peeling& r) {
 	std::pair<int, int> s1 = {s.first - r.r1 - 1, s.second - r.r3 - 1};
@@ -1068,18 +1164,19 @@ std::pair<int, int> hamiltonian_path_util(int m, int n, int x, int y, std::pair<
 	// inace specijalan slucaj...
 	
 	if(has_hamiltonian_path(s1, t1, m, n)) {
-		// ako su x i y u M5, racunaj u M5
-		if(x >= r.r3 + 1 && x <= r.r4 && y >= r.r1 + 1 && y <= r.r2) {
-			return connect(m, n, x, y, s, t, r, connect_m5_m1, connect_m5_m2, connect_m5_m3, connect_m5_m4);
+		// ako su x i y u M5
+		if(x >= r.r3 + 1 and x <= r.r4 and y >= r.r1 + 1 and y <= r.r2) {
+			
+		
 		}
 		
 		// ako su x i y u M1
 		if(x <= r.r3) {
-			// trazimo orijentaciju
-			// povezujemo se sa M5, M3 i M4 ako je moguce
+			return connect_to_path(m, n, x, y, r, s, t, find_orientation_m1, connect_m1_m5_ccw, connect_m1_m5_cw, go_right, m3_exists(r) and x == r.r3 and y == 1, m4_exists(r, n) and (!m2_exists(r, m) or !m3_exists(r)) and x == r.r3 and y == n - 1, m3_exists(r) and x == r.r3 and !y, m4_exists(r, n) and (!m2_exists(r, m) or !m3_exists(r)) and x == r.r3 and y == n - 2, connect_m1_m3, connect_m1_m4, H_C_M1_M3_CCW, H_C_M1_CW, r.r3 + 1, n);			
+
 		}
 		// ako su u M3
-		if(y <= r.r1 && x <= r.r4 && x > r.r3) {
+		if(y <= r.r1 and x <= r.r4 and x > r.r3) {
 			
 		}
 		// ako su u M2
@@ -1088,7 +1185,7 @@ std::pair<int, int> hamiltonian_path_util(int m, int n, int x, int y, std::pair<
 		}
 		
 		// ako su u M4
-		if(x > r.r3 && x <= r.r4 && y > r.r2) {
+		if(x > r.r3 and x <= r.r4 and y > r.r2) {
 		
 		}
 		
