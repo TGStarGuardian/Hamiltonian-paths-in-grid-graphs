@@ -796,26 +796,26 @@ auto connect(int m, int n, int x, int y, const std::pair<int, int>& s, const std
 	int n1 = r.r2 - r.r1;
 	if(m1_exists(r) && connectable_left(m1, n1, s1, t1)) {
 		// povezi sa M1
-		return f1(m, n, x, y, s, t, r);
+		return f1(m, n, x, y, r, s, t);
 		// povezi sa M2 ako nema M3 i M4
 		if(!m3_exists(r) && !m4_exists(r, n)) {
 			// povezi sa M2
-			return f2(m, n, x, y, s, t, r);
+			return f2(m, n, x, y, r, s, t);
 		}
 	} else if(m3_exists(r) && connectable_top(m1, n1, s1, t1)) {
 		// povezi sa M3
-		return f3(m1, n1, x, y, s1, t1, r);
+		return f3(m, n, x, y, r, s, t);
 		// povezi sa M4 ako nema M1 i M2
 		if(!m1_exists && !m2_exists(r, m)) {
 			// povezi sa M4
-			return f4(m, n, x, y, s, t, r);
+			return f4(m, n, x, y, r, s, t);
 		}
 	} else if(m2_exists(r, m) && connectable_right(m, n, s1, t1)) {
 		// povezi sa M2
-		return f2(m, n, x, y, s, t, r);
+		return f2(m, n, x, y, r, s, t);
 	} else {
 		// povezi sa M4
-		return f4(m, n, x, y, s, t, r);
+		return f4(m, n, x, y, r, s, t);
 	}
 }
 
@@ -830,7 +830,7 @@ std::pair<int, int> connect_block(int m, int n, int x, int y, const peeling& r, 
 	// 2) proveri da li mozes sa susednim2
 	// nakon svake provere ide spajanje
 	
-	if(f2) {
+	if(f1) {
 		// npr. za M1 i M3
 		// potrebno je da znamo m, n, r
 		// ako znamo orijentaciju, onda je posao lak
@@ -838,7 +838,7 @@ std::pair<int, int> connect_block(int m, int n, int x, int y, const peeling& r, 
 		return s1(m, n, r, orientation);
 	}
 	
-	if(f3) {
+	if(f2) {
 		return s2(m, n, r, orientation);
 	}
 	
@@ -1038,7 +1038,7 @@ std::pair<int, int> connect_m5_m2(int m, int n, int x, int y, const peeling& r, 
 }
 
 // povezujemo M5 sa M4
-std::pair<int, int> connect_m5_m1(int m, int n, int x, int y, const peeling& r, const std::pair<int, int>& s, const std::pair<int, int>& t) {
+std::pair<int, int> connect_m5_m4(int m, int n, int x, int y, const peeling& r, const std::pair<int, int>& s, const std::pair<int, int>& t) {
 	// dohvatimo orijentaciju
 	
 	auto T = find_orientation_m4(m, n, r, s, t);
@@ -1060,7 +1060,10 @@ std::pair<int, int> connect_m5_m1(int m, int n, int x, int y, const peeling& r, 
 
 
 std::pair<int, int> hamiltonian_path_util(int m, int n, int x, int y, std::pair<int, int>& s, std::pair<int, int>& t, peeling& r) {
-	
+	std::pair<int, int> s1 = {s.first - r.r1 - 1, s.second - r.r3 - 1};
+	std::pair<int, int> t1 = {t.first - r.r1 - 1, t.second - r.r3 - 1};
+	int m1 = r.r4 - r.r3;
+	int n1 = r.r2 - r.r1;
 	// ako postoji u M5 i tacka je u M5, idi u M5
 	// inace specijalan slucaj...
 	
