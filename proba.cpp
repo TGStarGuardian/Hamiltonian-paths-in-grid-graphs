@@ -519,14 +519,14 @@ std::pair<int, int> find_path_m5(int m, int n, int x, int y, const std::pair<int
 	// 1x2, 1x3, 2x1, 3x1
 	if(m == 1) {
 		// vracamo onaj dole/gore (ako on nije poslednji)
-		if(!s.first && y <= n - 1) return {y + 1, x};
-		if(s.first && y >= 0) return {y - 1, x};
+		if(!s.first && y < n - 1) return {y + 1, x};
+		if(s.first && y > 0) return {y - 1, x};
 		else return {-1, -1};
 	}
 	
 	if(n == 1) {
-		if(!s.second && x <= m - 1) return {y, x + 1};
-		if(s.second && x >= 0) return {y, x - 1};
+		if(!s.second && x < m - 1) return {y, x + 1};
+		if(s.second && x > 0) return {y, x - 1};
 		else return {-1, -1};
 	}
 	
@@ -1163,7 +1163,7 @@ std::pair<int, int> hamiltonian_path_util(int m, int n, int x, int y, std::pair<
 	// ako postoji u M5 i tacka je u M5, idi u M5
 	// inace specijalan slucaj...
 	
-	if(has_hamiltonian_path(s1, t1, m, n)) {
+	if(has_hamiltonian_path(s1, t1, m, n) and n1 >= 2 and m1 >= 2) {
 		if(m1_exists(r) and connectable_left(m1, n1, s1, t1)) {
 			// obradjujemo posebno svaki blok
 			if(x <= r.r3) {
@@ -1339,10 +1339,155 @@ std::pair<int, int> hamiltonian_path_util(int m, int n, int x, int y, std::pair<
 		}
 		
 		
+	} else if(has_hamiltonian_path(s1, t1, m1, n1)) {
+		// slucaj kada je n1 = 1 ili m1 = 1
+		if(n1 == 1) {
+			// pokusavamo redom da spojimo sa M1, M2, M3 i M4
+			// spajanje postoji akko postoji odgovarajuci blok
+			// i nije t sa te strane
+			if(s1.second) {
+				// reflektujemo sve po y-osi da bi s bilo levo
+				auto s2 = reflect_over_y(s.second, s.first, m);
+				auto t2 = reflect_over_y(t.second, t.first, m);
+				// r.r4 + 1 postaje R.r3
+				// m - 1 - r.r4 - 1 = m - r.r4 - 2
+				// r.r3 + 1 postaje R.r4
+				// m - 1 - r.r3 - 1 = R.r4
+				peeling R = {r.r1, r.r2, m - r.r4 - 2, m - r.r3 - 2};
+				auto ret = hamiltonian_path_util(m, n, m - x - 1, y, s2, t2, R);
+				if(ret.first == -1 or ret.second == -1) return {-1, -1};
+				return reflect_over_y(ret.second, ret.first, m);
+			}
+			if(m1_exists(r)) {
+				// s saljemo levo
+				// orijentacija zavisi od toga da li postoje
+				// M3 i M4
+				// ako postoji M3, idemo ka njemu
+				if(m3_exists(r)) {
+					// ideja: M5 --> M1 --> M3 --> M2 --> M4 --> M2 --> M3 --> M5
+					if(x <= r.r3) {
+						// u M1 smo
+						// prosetamo se kroz ceo M1
+						// tacku (r.r3, 1) spajamo sa M3
+						// spajamo se sa M4 ako M2 ne postoji
+						// spajanje je u tacki (r.r3, n - 2)
+						if(x == r.r3 and (y == 1 or (!m2_exists(r, m) and y == n - 2))) return go_right(x, y);
+						return H_C_M1_CW(r.r3 + 1, n, x, y);
+					
+					} else if(x > r.r4) {
+						// u M2 smo
+						// (r.r4 + 1, 1) spajamo sa M3
+						// (r.r4 + 1, n - 1) spajamo sa M4 ako M4 postoji
+						if(x == r.r4 + 1 and (y == 1 or (m4_exists(r, n) and y == n - 1))) return go_left(x, y);
+						return H_C_M2_CW(m - r.r4 - 1, n, x - r.r4 - 1, y) + std::pair{0, r.r4 + 1};
+					
+					} else {
+						if(y <= r.r1) {
+							// u M3 smo
+							// spajamo se sa M2 na (r.r4, 0) ako M2 postoji
+							// spajamo se sa M5 na (r.r3 + 2, r.r1)
+							if(m2_exists(r, m) and x == r.r4 and !y) return go_right(x, y);
+							if(x == r.r3 + 2 and y == r.r1) return go_down(x, y);
+							return H_C_M3_CW(r.r4 - r.r3, r.r1 + 1, x - r.r3 - 1, y) + std::pair{0, r.r3 + 1};
+							
+						} else if(y > r.r2) {
+							// u M4 smo
+							// spajamo se sa M2 ako postoji
+							// a inace se spajamo sa M1
+							if(m2_exists(r, m) and x == r.r4 and y == n - 2) return go_right(x, y);
+							if(!m2_exists(r, m) and x == r.r3 + 1 and y == n - 1) go_left(x, y);
+							return H_C_M4_CW(r.r4 - r.r3, n - r.r2 - 1, x - r.r3 - 1, y - r.r2 - 1) + std::pair{r.r2 + 1, r.r3 + 1};
+						} else {
+							// u M5 smo
+							// spajamo (r.r3 + 1, 0) sa M1
+							// inace idemo normalno
+							if(x == r.r3 + 1 and y == r.r1 + 1) return go_left(x, y);
+							auto ret = find_path_m5(m1, n1, x - r.r3 - 1, y - r.r1 - 1, s1, t1);
+							if(ret.first == -1 or ret.second == -1) return {-1, -1};
+							ret.first += r.r1 + 1;
+							ret.second += r.r3 + 1;
+							return ret;
+						}
+					}
+				} else {
+					// reflektujemo po x-osi i M4 postaje M3
+					auto s2 = reflect_over_x(s.second, s.first, n);
+					auto t2 = reflect_over_x(t.second, t.first, n);
+					peeling R = {n - 2 - r.r2, n - 2 - r.r1, r.r3, r.r4};
+					auto ret = hamiltonian_path_util(m, n, x, n - y - 1, s2, t2, R);
+					if(ret.first == -1 or ret.second == -1) return {-1, -1};
+					return reflect_over_x(ret.second, ret.first, n);
+				}
+			} else if(m3_exists(r)) {
+				// ne mozemo ovde da rotiramo, jer se menja dimenzija
+				// a u tom slucaju se oper radi rotacija i tu bi bila
+				// beskonacna rekurzija
+				// ostaje jedino da se razresi ovaj slucaj posebno
+				if(x > r.r4) {
+					// u M2 smo
+					// (r.r4 + 1, 1) spajamo sa M3
+					// (r.r4 + 1, n - 1) spajamo sa M4 ako M4 postoji
+					if(x == r.r4 + 1 and (y == 1 or (m4_exists(r, n) and y == n - 1))) return go_left(x, y);
+					return H_C_M2_CW(m - r.r4 - 1, n, x - r.r4 - 1, y) + std::pair{0, r.r4 + 1};
+				} else {
+					if(y <= r.r1) {
+						// u M3 smo
+						// u M3 smo
+						// spajamo se sa M2 na (r.r4, 0) ako M2 postoji
+						// spajamo se sa M5 na (r.r3 + 2, r.r1)
+						if(m2_exists(r, m) and x == r.r4 and !y) return go_right(x, y);
+						if(x == 1 and y == r.r1) return go_down(x, y);
+						return H_C_M3_CW(r.r4 - r.r3, r.r1 + 1, x - r.r3 - 1, y) + std::pair{0, r.r3 + 1};
+					} else if(y > r.r2) {
+						// u M4 smo
+						// spajamo samo sa M2 ako postoji
+						// ako ne postoji, onda M3 zauzima (1, r.r1 + 1)
+						// zato mi uzimamo (2, r.r1 + 1)
+						if(m2_exists(r, m) and x == r.r4 and y == n - 2) return go_right(x, y);
+						if(!m2_exists(r, m) and x == 2 and y == r.r2 + 1) return go_up(x, y);
+						return ((m2_exists(r, m))?
+							H_C_M4_CW(r.r4 - r.r3, n - r.r2 - 1, x - r.r3 - 1, y - r.r2 - 1) :
+							H_C_M2_M4_CCW(r.r4 - r.r3, n - r.r2 - 1, x - r.r3 - 1, y - r.r2 - 1))
+							+ std::pair{r.r2 + 1, r.r3 + 1};
+					} else {
+						// u M5 smo
+						// povezujemo se sa M3 na (r.r3 + 1, r.r1 + 1)
+						if(x == r.r3 + 1 and y == r.r1 + 1) return go_up(x, y);
+						if(!m2_exists(r, m) and m4_exists(r, n) and x == r.r3 + 2 and y == r.r1 + 1) return go_down(x, y);
+						auto ret = find_path_m5(m1, n1, x - r.r3 - 1, y - r.r1 - 1, s1, t1);
+						if(ret.first == -1 or ret.second == -1) return {-1, -1};
+						ret.first += r.r1 + 1;
+						ret.second += r.r3 + 1;
+						return ret;
+					}
+				
+				}
+			} else {
+				// gledamo M4 i M2
+				// ako reflektujemo i po x i po y
+				// dobicemo M4 --> M3, M2 --> M1
+				auto s2 = reflect_over_xy(s.second, s.first, m, n);
+				auto t2 = reflect_over_xy(t.second, t.first, m, n);
+				peeling R = {n - 2 - r.r2, n - 2 - r.r1, m - 2 - r.r4, m - 2 - r.r3};
+				auto ret = hamiltonian_path_util(m, n, m - x - 1, n - y - 1, s2, t2, R);
+				if(ret.first == -1 or ret.second == -1) return {-1, -1};
+				return reflect_over_xy(ret.second, ret.first, m, n);
+			}
+		
+		
+		} else {
+			// onda je m1 == 1
+			// rotiramo matricu i vracamo
+			std::pair<int, int> s2 = {s.second, s.first}, t2 = {t.second, t.first};
+			peeling R = {r.r3, r.r4, r.r1, r.r2};
+			auto ret = hamiltonian_path_util(n, m, y, x, s2, t2, R);
+			return {ret.second, ret.first};
+		}
+	
+	
+	
+	
 	} else {
-	
-	
-	
 	
 	
 	
@@ -1391,14 +1536,14 @@ int main() {
 	
 	// find_hamiltonian_path(int m, int n, int x, int y, std::pair<int, int>& s, std::pair<int, int>& t)
 	auto x = s;
-	/*
+	
 	for(int i = 0; i < n; i++) {
 		for(int j = 0; j < m; j++) {
 			std::cout << find_hamiltonian_path(m, n, j, i, s, t) << " "; 
 		}
 		std::cout << '\n';
 	}
-	*/
+	
 	
 	for(int i = 0; i < n*m; i++) {
 		x = find_hamiltonian_path(m, n, x.second, x.first, s, t);
