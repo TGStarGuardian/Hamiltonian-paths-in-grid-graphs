@@ -250,7 +250,7 @@ inline bool out_of_bounds(int x, int l, int r) {
 inline bool is_corner_vertex(int x, int m) {
 	// samo ako je x == 0 ili x == m - 1
 	// ako je x == m - 1, onda je x - m - 1 == 0
-	return !x || !(x - m + 1);
+	return !x or !(x - m + 1);
 }
 
 inline bool connected_by_non_boundary_edge(const std::pair<int, int>& s, const std::pair<int, int>& t, int m, int n) {
@@ -260,8 +260,8 @@ inline bool connected_by_non_boundary_edge(const std::pair<int, int>& s, const s
 	// s.first == t.first, s.first, t.first su iz {0, 1}
 	// s.first - t.first == 0
 	// s.first xor t.first
-	return (n == 2 && s.second == t.second && !is_corner_vertex(s.second, m) && (s.first ^ t.first))
-	|| (m == 2 && s.first == t.first && !is_corner_vertex(s.first, n) && (s.second ^ t.second));
+	return (n == 2 and s.second == t.second and !is_corner_vertex(s.second, m) and (s.first ^ t.first))
+	or (m == 2 and s.first == t.first and !is_corner_vertex(s.first, n) and (s.second ^ t.second));
 }
 
 bool color_compatible(const std::pair<int, int>& v1, const std::pair<int, int>& v2, int width, int height) {
@@ -289,19 +289,19 @@ bool has_hamiltonian_path(std::pair<int, int> s, std::pair<int, int> t, int m, i
 		|| out_of_bounds(t.second, 0, m)) {
 	throw "Error: either s or t are outside the matrix";
 }
-	return color_compatible(s, t, m, n) &&
-		!( (n == 1 && (!is_corner_vertex(s.second, m) || !is_corner_vertex(t.second, m)))
-		 || (m == 1 && (!is_corner_vertex(s.first, n) || !is_corner_vertex(t.first, n)))
-		 || connected_by_non_boundary_edge(s, t, m, n)
+	return color_compatible(s, t, m, n) and
+		!( (n == 1 and (!is_corner_vertex(s.second, m) or !is_corner_vertex(t.second, m)))
+		 or (m == 1 and (!is_corner_vertex(s.first, n) or !is_corner_vertex(t.first, n)))
+		 or connected_by_non_boundary_edge(s, t, m, n)
 		 // n == 3, m parno...u radu stoji da treba biti izomorfno sa s crna, s.x < t.x (za sy == 1) ili t.x > s.x + 1 (za sy != 1)
 		 // to znaci da mora biti ovo da vazi i kad rotiramo sliku i kad rotiramo uloge za s i t
 		 // znaci, potrebno je obraditi slucaj kada se slika zarotira oko y-ose
 		 // ali tada se menjaju boje
 		 // tako da je potrebno samo razmotriti ovaj slucaj kada je s crna ili kada je t crna 
-		 || (n == 3 && !(m % 2) && ((s.first + s.second) % 2) && ((s.first == 1 && s.second < t.second) || (s.first != 1 && t.second > s.second + 1)))
-		 || (n == 3 && !(m % 2) && ((t.first + t.second) % 2) && ((t.first == 1 && t.second < s.second) || (t.first != 1 && s.second > t.second + 1)))
-		 || (m == 3 && !(n % 2) && ((s.second + s.first) % 2) && ((s.second == 1 && s.first < t.first) || (s.second != 1 && t.first > s.first + 1)))
-		 || (m == 3 && !(n % 2) && ((t.first + t.second) % 2) && ((t.second == 1 && t.first < s.first) || (t.second != 1 && s.first > t.first + 1)))
+		 or (n == 3 and !(m % 2) and ((s.first + s.second) % 2) and ((s.first == 1 and s.second < t.second) or (s.first != 1 and t.second > s.second + 1)))
+		 or (n == 3 and !(m % 2) and ((t.first + t.second) % 2) and ((t.first == 1 and t.second < s.second) or (t.first != 1 and s.second > t.second + 1)))
+		 or (m == 3 and !(n % 2) and ((s.second + s.first) % 2) and ((s.second == 1 and s.first < t.first) or (s.second != 1 and t.first > s.first + 1)))
+		 or (m == 3 and !(n % 2) and ((t.first + t.second) % 2) and ((t.second == 1 and t.first < s.first) or (t.second != 1 and s.first > t.first + 1)))
 		);
 }
 
@@ -1021,7 +1021,7 @@ std::pair<int, int> hamiltonian_path_util(int m, int n, int x, int y, std::pair<
 	// ako postoji u M5 i tacka je u M5, idi u M5
 	// inace specijalan slucaj...
 	
-	if(has_hamiltonian_path(s1, t1, m, n) and n1 >= 2 and m1 >= 2) {
+	if(has_hamiltonian_path(s1, t1, m1, n1) and n1 >= 2 and m1 >= 2) {
 		if(m1_exists(r) and connectable_left(m1, n1, s1, t1)) {
 			// obradjujemo posebno svaki blok
 			if(x <= r.r3) {
@@ -1263,6 +1263,7 @@ std::pair<int, int> hamiltonian_path_util(int m, int n, int x, int y, std::pair<
 				// prvi slucaj
 				if(n - 1 - r.r2 == 2 and r.r1 + 1 == 2) {
 					// specijalni slucaj
+					// tada sigurno postoji i M3
 				} else {
 					// ako M4 nema bar 3 reda, reflektujemo po x-osi
 					if(n - 1 - r.r2 == 2) {
@@ -1285,15 +1286,13 @@ std::pair<int, int> hamiltonian_path_util(int m, int n, int x, int y, std::pair<
 				return {ret.second, ret.first};
 			} else if(n1 == 2) {
 				// drugi slucaj
+				// r.r4 postaje s.second
+				r.r4 = s.second;
+				return hamiltonian_path_util(m, n, x, y, s, t, r);
+			} else if(m1 == 2) {
 				// r.r2 postaje s.first
 				r.r2 = s.first;
 				return hamiltonian_path_util(m, n, x, y, s, t, r);
-			} else if(m1 == 2) {
-				// svodimo na drugi slucaj rotacijom
-				std::pair<int, int> s2 = {s.second, s.first}, t2 = {t.second, t.first};
-				peeling R = {r.r3, r.r4, r.r1, r.r2};
-				auto ret = hamiltonian_path_util(n, m, y, x, s2, t2, R);
-				return {ret.second, ret.first};
 			} else if(n1 == 3) {
 				// treci slucaj
 			} else {
