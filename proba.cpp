@@ -1263,7 +1263,21 @@ std::pair<int, int> hamiltonian_path_util(int m, int n, int x, int y, std::pair<
 				// prvi slucaj
 				if(n - 1 - r.r2 == 2 and r.r1 + 1 == 2) {
 					// specijalni slucaj
-					// tada sigurno postoji i M3
+					// svodimo na treci slucaj tako sto postavimo r.r1 na -1 na gore
+					// ako je leva tacka bela, onda M1 postoji ili je leva tacka na uglu
+					// prva dimenzija je 5, druga je m
+					// ako je m neparna, onda je i t bela
+					// tada je t na uglu ili M2 postoji
+					// ali onda na pravoj postoji put, pa nismo ovde
+					// ako je m parna, onda je t crna, pa je na uglu ili M2 postoji
+					// u oba slucaja, t je na uglu od M5
+					// pa onda opet postoji put na pravoj
+					// znaci, crna tacka je sa leve strane
+					// tada je m parno, jer inace ne bi postojao put
+					// iz tog razloga je t bela
+					// n1 == 3 i m1 parno, pa je ovo instanca treceg slucaja
+					r.r1 = -1;
+					return hamiltonian_path_util(m, n, x, y, s, t, r);
 				} else {
 					// ako M4 nema bar 3 reda, reflektujemo po x-osi
 					if(n - 1 - r.r2 == 2) {
@@ -1295,6 +1309,118 @@ std::pair<int, int> hamiltonian_path_util(int m, int n, int x, int y, std::pair<
 				return hamiltonian_path_util(m, n, x, y, s, t, r);
 			} else if(n1 == 3) {
 				// treci slucaj
+				// znamo da je crna tacka levo
+				// jer inace bi put postojao
+				// tacka (r.r3 + 1, r.r2) je sigurno bela
+				// jer to je tacka (2, 0) na matrici 3xm1
+				// uzimamo tu tacku kao tacku p
+				// i spajamo s sa njom
+				// takodje je tacka (r.r4, r.r2) crna
+				// ako je s desno, okrecemo reflektujemo
+				if(s.second > t.second) {
+					auto s2 = reflect_over_y(s.second, s.first, m);
+					auto t2 = reflect_over_y(t.second, t.first, m);
+					peeling R = {r.r1, r.r2, m - r.r4 - 2, m - r.r3 - 2};
+					auto ret = hamiltonian_path_util(m, n, m - x - 1, y, s2, t2, R);
+					if(ret.first == -1 or ret.second == -1) return {-1, -1};
+					return reflect_over_y(ret.second, ret.first, m);	
+				}
+				std::pair<int, int> p1 = {2, 0}, q1 = {2, 1}, t2 = {t.first - r.r1 - 1, t.second - r.r4 + 1};
+				// spajamo p sa onom ispod nje
+				if(x == r.r3 + 1 and y == r.r2) return go_down(x, y);
+				// spajamo s sa p
+				if((x == r.r3 + 1 or x == r.r3 + 2) and r.r1 < y and y <= r.r2) {
+					// trazimo orijentaciju za M1
+					if(m1_exists(r)) {
+						std::pair<int, int> p = {r.r2, r.r3 + 1};
+						peeling R = {r.r1, r.r2, r.r3, r.r3 + 2};
+						auto o = find_orientation_m1(m, n, R, s, p).second;
+						if(x == o.second + 1 and y == o.first) return go_left(x, y);
+					}
+					std::pair<int, int> p = {r.r2, r.r3 + 1};
+					peeling R = {r.r1, r.r2, r.r3, r.r3 + 2};
+					auto o = find_orientation_m2(m, n, R, s, p).second;
+					if(x == o.second - 1 and y == o.first) return go_right(x, y);
+					return path_n_2(3, x - r.r3 - 1, y - r.r1 - 1, s1, p1) + std::pair{r.r1 + 1, r.r3 + 1};
+				}
+				
+				// spajamo q sa t
+				if((x == r.r4 or x == r.r4 - 1) and r.r1 < y and y <= r.r2) {
+					if(m2_exists(r, m)) {
+						std::pair<int, int> q = {r.r2, r.r4};
+						peeling R = {r.r1, r.r2, r.r4 - 2, r.r4};
+						auto o = find_orientation_m2(m, n, R, q, t).second;	
+						if(x == o.second - 1 and y == o.first) return go_right(x, y);
+					} 
+					auto ret = path_n_2(3, x - r.r4 + 1, y - r.r1 - 1, q1, t2);
+					if(ret.first == -1 or ret.second == -1) return ret;
+					ret.first += r.r1 + 1;
+					ret.second += r.r4 - 1;
+					return ret;
+				}
+				// tacku ispod q spajamo sa q
+				if(x == r.r4 and y == r.r2 + 1) return go_up(x, y);
+				
+				// koristimo M4 da spojimo tacke p1 i t1
+				// idemo cik-cak stilom
+				// za parne x, idemo dole
+				// za neparne x, idemo gore
+				// jedino lomimo ako smo dosli do granice
+				// (!(x % 2) and y < n - 1) --> go_down
+				// (!(x % 2) and y == n - 1) --> go_right
+				// (x % 2 and y > 0) --> go_up
+				// (x % 2 and !y) --> go_right
+				if(int x1 = x - r.r3 - 1, y1 = y - r.r2 - 1; y > r.r2 and x > r.r3 and x <= r.r4)
+					return {y + (!(x1 % 2) and y < n - 1) - (x1 % 2 and y1), x + (!(x1 % 2) and y == n - 1) + (x1 % 2 and !y1)};
+				
+				
+				if(x <= r.r3) {
+					// u M1 smo
+					// spajamo sa M5 sa leve strane
+					// nema spajanja sa M3 i M4
+					// gledamo na Hamiltonov put kao na put od s1 do p1
+					// izmenicemo r tako da M5 bude dimenzija 3x2
+					peeling R = {r.r1, r.r2, r.r3, r.r3 + 2};
+					std::pair<int, int> p = {r.r2, r.r3 + 1};
+					return connect_to_path(m, n, x, y, R, s, p, find_orientation_m1, connect_m1_m5_ccw, connect_m1_m5_cw, go_right,
+					false,
+					false,
+					false,
+					false,
+					connect_m1_m3, connect_m1_m4, H_C_M1_M3_CCW, H_C_M1_CW, r.r3 + 1, n, 0, 0);
+				}
+				
+				if(x > r.r4) {
+					// u M2 smo
+					// spajamo sa desne strane
+					// izmenicemo R tako da M5 bude dimenzija 3x2
+					peeling R = {r.r1, r.r2, r.r4 - 2, r.r4};
+					std::pair<int, int> q = {r.r2, r.r4};
+					return connect_to_path(m, n, x, y, R, q, t, find_orientation_m2, connect_m2_m5_ccw, connect_m2_m5_cw, go_left,
+					false,
+					false,
+					false,
+					false,
+					connect_m2_m3, connect_m2_m4, H_C_M2_M4_CCW, H_C_M2_CW, m - r.r4 - 1, n, r.r4 + 1, 0);
+					
+				}
+				
+				if((x > r.r3 + 2 and x < r.r4 - 1) and r.r1 < y and y <= r.r2) {
+					// neiskoriscenom smo delu od M5
+					// spajamo to sa putem sa leve strane (kao M2)
+					// namesticemo R tako da se dobije da je M5 kao 
+					// sve koordinate rotiramo zato da se svede na slucaj sa M1
+					peeling R = {r.r1, r.r2, r.r3, r.r3 + 2};
+					std::pair<int, int> p = {r.r2, r.r3 + 1};
+					// posmatramo samo deo matrice iznad M4
+					return connect_to_path(m, r.r2 + 1, x, y, R, s, p, find_orientation_m2, connect_m2_m5_ccw, connect_m2_m5_cw, go_left,
+					false,
+					false,
+					false,
+					false,
+					connect_m2_m3, connect_m2_m4, H_C_M2_M4_CCW, H_C_M2_CW, m1 - 4, r.r2 + 1, r.r3 + 3, 0);
+				}
+				
 			} else {
 				// onda je m1 == 3
 				// svodimo na treci slucaj rotacijom
