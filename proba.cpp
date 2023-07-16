@@ -1,6 +1,7 @@
 #include <iostream>
 #include <vector>
 #include <array>
+#include <cstdlib>
 #include <chrono>
 
 
@@ -448,72 +449,97 @@ inline std::pair<int, int> reflect_over_xy(int x, int y, int m, int n) {
 	return {n - 1 - y, m  - 1 - x};
 }
 
+inline bool is_black(const std::pair<int, int>& s) {
+	return (s.first + s.second) % 2;
+}
+
+inline bool is_white(const std::pair<int, int>& s) {
+	return !is_black(s);
+}
 
 std::pair<int, int> find_path_m5(int m, int n, int x, int y, const std::pair<int, int>& s, const std::pair<int, int>& t) {
-	if(n >= 4 && (m > 3 || (m == 3 && !((s.first + s.second) % 2) ))) return horizontal_trisection(m, n, x, y, s, t);
+	// ako je n >= 4, a m neparno, onda su obe poveznice crne boje
+	// ako je n >= 4, a m parno, onda su razlicitih boja
+	// u prvom slucaju moze se raditi horizontalna trisekcija ako je s bela
+	// u drugom moze bilo kako
 	
-	if(n >= 4) {
+	// horizontalna trisekcija postoji u sledecim slucajevima
+	// 1) m neparno, n neparno, n > 4
+	// 2) m parno, n neparno, n > 4
+	// 3) m neparno, n parno, n >= 4, m >= 3
+	// (s je levo i s je bela) ili (t je levo i t je bela)
+	// 4) m parno, n parno, n >= 4
+	
+	if(n >= 4 and ((n % 2) or !(m % 2) or (m >= 3 and ( (s.second < t.second and is_white(s)) or (s.second > t.second and is_white(t))) ))) return horizontal_trisection(m, n, x, y, s, t);
+	
+	if(m >= 4 and ((m % 2) or !(n % 2) or (n >= 3 and ( (s.first < t.first and is_white(s)) or (s.first > t.first and is_white(t))) ))) return vertical_trisection(m, n, x, y, s, t);
+	// ako prvi nije prosao, onda je:
+	// n < 4 ili n parno, m neparno, (m < 3 ili leva je crna)
+	// ako drugi nije prosao, onda je:
+	// m < 4 ili m parno, n neparno, (n < 3 ili gornja je crna)
+	// ako je sada n >= 4 i m == 3, onda je leva crna
+	// ako je m >= 4 i n == 3, onda je gornja crna
+	// ako je n >= 4 i m < 3, onda je m == 1 i to resavaju slucajevi ispod
+	// ako je m >= 4 i n < 3, onda je n == 1 i to resavaju slucajevi ispod
+	// ako je n < 4 i m < 4, to se resava ispod
+	// ako je n < 4 i m == 2, to resava slucaj ispod
+	// ako je m < 4 i n == 2, to resava slucaj ispod
+	// ako je n >= 4 i m > 3, prolazi vertikalna trisekcija, jer je m neparno i n parno
+	// ako je m >= 4 i n > 3, prolazi horizontalna trisekcija, jer je m parno i n neparno
+	
+	if(n >= 4 and m == 3) {
 		// za m == 1 i m == 2, imamo vec dole obradjene slucajeve
 		// za m == 3, resavamo ovde
-		if(m == 3) {
-			// tada znamo da je s crna, jer nije prosao gornji slucaj
-			// ovde je junction vertex na sredini
-			// ako je t iznad s, onda okrenemo graf po x-osi
+		// tada znamo da je s crna, jer nije prosao gornji slucaj
+		// ovde je junction vertex na sredini
+		// ako je t iznad s, onda okrenemo graf po x-osi
 			
-			if(t.second < s.second) {
-				auto s1 = reflect_over_x(s.second, s.first, n);
-				auto t1 = reflect_over_x(t.second, t.first, n);
-				auto ret = find_path_m5(m, n, x, n - 1 - y, s1, t1);
-				if(ret.first == -1 || ret.second == -1) return {-1, -1};
-				return reflect_over_x(ret.second, ret.first, n);
-			}
+		if(t.second < s.second) {
+			auto s1 = reflect_over_x(s.second, s.first, n);
+			auto t1 = reflect_over_x(t.second, t.first, n);
+			auto ret = find_path_m5(m, n, x, n - 1 - y, s1, t1);
+			if(ret.first == -1 || ret.second == -1) return {-1, -1};
+			return reflect_over_x(ret.second, ret.first, n);
+		}
 			
-			// sada je s gore
-			// spajamo s sa (1, 1), (1, 1) sa (2, 1), a (2, 1) sa t
-			if(y <= 1) {
-				if(x == 1 && y == 1) return {2, 1};
-				std::pair<int, int> p = {1, 1};
-				return path_2_m(3, x, y, s, p);
-			} else {
-				std::pair<int, int> q = {0, 1}, t1 = {t.first - 2, t.second};
-				auto ret = path_2_m(3, x, y - 2, q, t1);
-				if(ret.first == -1 || ret.second == -1) return {-1, -1};
-				ret.first += 2;
-				return ret;
-			}
+		// sada je s gore
+		// spajamo s sa (1, 1), (1, 1) sa (2, 1), a (2, 1) sa t
+		if(y <= 1) {
+			if(x == 1 && y == 1) return {2, 1};
+			std::pair<int, int> p = {1, 1};
+			return path_2_m(3, x, y, s, p);
+		} else {
+			std::pair<int, int> q = {0, 1}, t1 = {t.first - 2, t.second};
+			auto ret = path_2_m(3, x, y - 2, q, t1);
+			if(ret.first == -1 || ret.second == -1) return {-1, -1};
+			ret.first += 2;
+			return ret;
 		}
 	}
 	
-	if(m >= 4 && (n > 3 || (n == 3 && !((s.first + s.second) % 2) ))) return vertical_trisection(m, n, x, y, s, t);
-	
-	if(m >= 4) {
-		if(n == 3) {
-			if(t.first < s.first) {
-				auto s1 = reflect_over_y(s.second, s.first, m);
-				auto t1 = reflect_over_y(t.second, t.first, m);
-				auto ret = find_path_m5(m, n, m - 1 - x, y, s1, t1);
-				if(ret.first == -1 || ret.second == -1) return {-1, -1};
-				return reflect_over_y(ret.second, ret.first, m);
-			}
-			
-			// spajamo s sa (1, 1), (1, 1) sa (1, 2), a (1, 2) sa t
-			if(x <= 1) {
-				if(x == 1 && y == 1) return {1, 2};
-				std::pair<int, int> p = {1, 1};
-				return path_n_2(3, x, y, s, p);
-			} else {
-				std::pair<int, int> q = {1, 0}, t1 = {t.first, t.second - 2};
-				auto ret = path_n_2(3, x - 2, y, q, t1);
-				if(ret.first == -1 || ret.second == -1) return {-1, -1};
-				ret.second += 2;
-				return ret;
-			}
+	if(m >= 4 and n == 3) {
+		if(t.first < s.first) {
+			auto s1 = reflect_over_y(s.second, s.first, m);
+			auto t1 = reflect_over_y(t.second, t.first, m);
+			auto ret = find_path_m5(m, n, m - 1 - x, y, s1, t1);
+			if(ret.first == -1 || ret.second == -1) return {-1, -1};
+			return reflect_over_y(ret.second, ret.first, m);
 		}
-	
+			
+		// spajamo s sa (1, 1), (1, 1) sa (1, 2), a (1, 2) sa t
+		if(x <= 1) {
+			if(x == 1 && y == 1) return {1, 2};
+			std::pair<int, int> p = {1, 1};
+			return path_n_2(3, x, y, s, p);
+		} else {
+			std::pair<int, int> q = {1, 0}, t1 = {t.first, t.second - 2};
+			auto ret = path_n_2(3, x - 2, y, q, t1);
+			if(ret.first == -1 || ret.second == -1) return {-1, -1};
+			ret.second += 2;
+			return ret;
+		}
 	}
 	
-	
-	// ovde je m < 4 i n < 4
 	// imamo slucajeve:
 	
 	// 1x2, 1x3, 2x1, 3x1
@@ -1013,7 +1039,8 @@ inline std::pair<int, int> connect_to_path(int m, int n, int x, int y, const pee
 	}
 }
 
-std::pair<int, int> hamiltonian_path_util(int m, int n, int x, int y, std::pair<int, int>& s, std::pair<int, int>& t, peeling& r) {
+
+std::pair<int, int> hamiltonian_path_util(int m, int n, int x, int y, const std::pair<int, int>& s, const std::pair<int, int>& t, peeling& r) {
 	std::pair<int, int> s1 = {s.first - r.r1 - 1, s.second - r.r3 - 1};
 	std::pair<int, int> t1 = {t.first - r.r1 - 1, t.second - r.r3 - 1};
 	int m1 = r.r4 - r.r3;
@@ -1070,8 +1097,8 @@ std::pair<int, int> hamiltonian_path_util(int m, int n, int x, int y, std::pair<
 					
 				} else {
 					// u M5 smo
-					// treba paziti na slucaj kada M3 i M4 ne postoje
-					if(!m3_exists(r) and !m4_exists(r, n) and x == r.r4)
+					// treba paziti na slucaj kada M3 i M4 ne postoje, ali M2 postoji
+					if(!m3_exists(r) and !m4_exists(r, n) and m2_exists(r, m) and x == r.r4)
 						return connect_m5_m2(m, n, x, y, r, s, t);
 					return connect_m5_m1(m, n, x, y, r, s, t);
 				}
@@ -1444,7 +1471,7 @@ std::pair<int, int> hamiltonian_path_util(int m, int n, int x, int y, std::pair<
 	return {-1, -1};
 }
 
-std::pair<int, int> find_hamiltonian_path(int m, int n, int x, int y, std::pair<int, int>& s, std::pair<int, int>& t) {
+std::pair<int, int> find_hamiltonian_path(int m, int n, int x, int y, const std::pair<int, int>& s, const std::pair<int, int>& t) {
 	// ako su s i t ista tacka, gledamo ima li ciklusa
 	// ako ima, nalazimo ga
 	if(s == t) {
@@ -1467,6 +1494,177 @@ std::pair<int, int> find_hamiltonian_path(int m, int n, int x, int y, std::pair<
 	return hamiltonian_path_util(m, n, x, y, s, t, r);
 }
 
+// algoritam za Hamiltonov put u L
+std::pair<int, int> find_hamiltonian_path_L(int m, int n, int x, int y, const std::pair<int, int>& s, const std::pair<int, int>& t) {
+	// prvo proveravamo da li su u istom regionu
+	if(s.second < m and t.second < m) {
+		// onda su na istoj vertikali
+		// radimo strip
+		// na vertikali nadjemo put
+		// na horizontali ciklus
+		// i onda ih spajamo
+		if(x < m) {
+			// gledamo desnu stranu
+			// 5n - 4 >= 3 akko 5n >= 7
+			// jedino za n == 1 ovo ne vazi
+			// ako je n == 1, onda svakako nema puta u ovom slucaju
+			if(n == 1) return {-1, -1};
+			// posmatramo redom (m - 1, 4n - 4), (m - 1, 4n - 3), (m - 1, 4n - 2)
+			// ako bilo koja ide gore ili dole, nju iskoristimo za povez
+			
+			if(find_hamiltonian_path(m, 5*n - 4, m - 1, 5*n - 5, s, t).second == m - 1) {
+				if(x == m - 1 and y == 5*n - 5) return go_right(x, y);
+			} else if(find_hamiltonian_path(m, 5*n - 4, m - 1, 5*n - 6, s, t).second == m - 1) {
+				if(x == m - 1 and y == 5*n - 6) return go_right(x, y);
+			} else if(find_hamiltonian_path(m, 5*n - 4, m - 1, 5*n - 7, s, t).second == m - 1) {
+				if(x == m - 1 and y == 5*n - 7) return go_right(x, y);
+			}
+			
+			return find_hamiltonian_path(m, 5*n - 4, x, y, s, t);
+		} else {
+			// ciklus
+			// idemo levo ispod/iznad tacke koja je presla u ciklus
+			// najpre odredimo orijentaciju
+			// ona je CW ako je tacka isla dole, a inace je CCW
+			bool orientation;
+			auto ret = find_hamiltonian_path(m, 5*n - 4, m - 1, 5*n - 5, s, t);
+			if(ret.second == m - 1) {
+				orientation = true;
+			} else {
+				ret = find_hamiltonian_path(m, 5*n - 4, m - 1, 5*n - 6, s, t);
+				if(ret.second == m - 1 and ret.first == 5*n - 7) {
+					orientation = true;
+				} else if(ret.second == m - 1) {
+					orientation = false;
+				} else {
+					ret = find_hamiltonian_path(m, 5*n - 4, m - 1, 5*n - 7, s, t);
+					if(ret.first == 5*n - 8) {
+						orientation = true;
+					} else {
+						orientation = false;
+					}
+				}
+			}
+			//std::cout << ret.first;
+			if(x == m and y == ret.first) {
+				return go_left(x, y);
+			}
+			
+			if(orientation) {
+				return H_C_M2_M4_CCW(2*m - 2, n, x - m, y - 4*n + 4) + std::pair{4*n - 4, m};
+			} else {
+				return H_C_M2_CW(2*m - 2, n, x - m, y - 4*n + 4) + std::pair{4*n - 4, m};
+			}
+		}
+	} else if(s.first >= 4*n - 4 and t.first >= 4*n - 4) {
+		// onda su na istoj horizontali
+		// radimo strip
+		// na horizontali nadjemo put, na vertikali ciklus
+		// pa spojimo
+		std::pair<int, int> s1 = {s.first - 4*n + 4, s.second};
+		std::pair<int, int> t1 = {t.first - 4*n + 4, t.second};
+		if(y >= 4*n - 4) {
+			// 3m - 2 >= 3 akko 3m >= 5
+			// ovo ne moze jedino ako je m == 1
+			if(m == 1) return {-1, -1};
+			// proveravamo tacke pri gornjem levom uglu horizontale
+			// nazalost, ne moze se ovo svesti na prethodni slucaj, jer
+			// 3m - 2 --> 5N - 4, pa je 5N = 3m + 2, a to mozda nema resenja
+			if(!find_hamiltonian_path(3*m - 2, n, 0, 0, s1, t1).first) {
+				if(!x and y == 4*n - 4) return go_up(x, y);
+			} else if(!find_hamiltonian_path(3*m - 2, n, 1, 0, s1, t1).first) {
+				if(x == 1 and y == 4*n - 4) return go_up(x, y);
+			} else if(!find_hamiltonian_path(3*m - 2, n, 2, 0, s1, t1).first) {
+				if(x == 2 and y == 4*n - 4) return go_up(x, y);
+			}
+			
+			auto ret = find_hamiltonian_path(3*m - 2, n, x, y - 4*n + 4, s1, t1);
+			if(ret.first == -1 or ret.second == -1) return {-1, -1};
+			ret.first += 4*n - 4;
+			return ret;
+		} else {
+			// ciklus
+			// odredimo orijentaciju
+			bool orientation;
+			auto ret = find_hamiltonian_path(3*m - 2, n, 0, 0, s1, t1);
+			if(!ret.first) {
+				orientation = false;
+			} else {
+				ret = find_hamiltonian_path(3*m - 2, n, 0, 1, s1, t1);
+				if(!ret.first and !ret.second) {
+					orientation = true;
+				} else if(!ret.first) {
+					orientation = false;
+				} else {
+					ret = find_hamiltonian_path(3*m - 2, n, 0, 2, s1, t1);
+					if(ret.second == 1) {
+						orientation = true;
+					} else {
+						orientation = false;
+					}
+				}
+			}
+			
+			if(x == ret.second and y == 4*n - 5) {
+				return go_down(x, y);
+			}
+			
+			if(orientation) {
+				return H_C_M1_M3_CCW(m, 4*n - 4, x, y);
+			} else {
+				return H_C_M3_CW(m, 4*n - 4, x, y);
+			}
+			
+		}
+	} else {
+		// radimo split
+		if(s.second < m) {
+			// ako je s na vertikali
+			// provucemo put od s do p
+			// p.x = m - 1
+			// p.y >= 4n - 4
+			// mali deo na horizontali je svakako paran graf
+			// to znaci da q mora biti suprotne boje od t
+			// q biramo da bude (m, 4n - 4) ili (m, 4n - 3)
+			// mora vaziti: (t.first + t.second + m + q.first) % 2 = 1
+			// ako su oba parna, onda 4n - 4, a inace 4n - 3
+			// p je levo od q
+			std::pair<int, int> p = {4*n - 3 - ((t.first + t.second + m) % 2), m - 1};
+			
+			if(x == m - 1 and y == p.first) return go_right(x, y);
+			if(x < m) {
+				// spajamo s i p
+				return find_hamiltonian_path(m, 5*n - 4, x, y, s, p);
+			} else {
+				// spajamo q sa t
+				std::pair<int, int> q1 = {p.first - 4*n + 4, 0}, t1 = {t.first - 4*n + 4, t.second - m};
+				auto ret = find_hamiltonian_path(2*m - 2, n, x - m, y - 4*n + 4, q1, t1);
+				if(ret.first == -1 or ret.second == -1) return {-1, -1};
+				ret.first += 4*n - 4;
+				ret.second += m;
+				return ret;
+			}
+		} else {
+			// onda je s na horizontali
+			// tacku p biramo tako da bude suprotne boje od s
+			// jer je onaj mali deo na horizontali parni graf
+			std::pair<int, int> q = {4*n - 3 - ((s.first + s.second + m) % 2), m - 1};
+			if(x == q.second + 1 and y == q.first) return go_left(x, y);
+			std::pair<int, int> p1 = {q.first - 4*n + 4, q.second + 1 - m};
+			std::pair<int, int> s1 = {s.first - 4*n + 4, s.second - m};
+			if(x < m) {
+				// spajamo q sa t
+				return find_hamiltonian_path(m, 5*n - 4, x, y, q, t);
+			} else {
+				// spajamo s sa p
+				return find_hamiltonian_path(2*m - 2, n, x - m, y - 4*n + 4, s1, p1) + std::pair{4*n - 4, m};
+			}
+		}
+	}
+	
+	return {-1, -1};
+	
+}
 
 int main() {
 
@@ -1484,7 +1682,7 @@ int main() {
 	
 	// find_hamiltonian_path(int m, int n, int x, int y, std::pair<int, int>& s, std::pair<int, int>& t)
 	auto x = s;
-	
+	/*
 	for(int i = 0; i < n; i++) {
 		for(int j = 0; j < m; j++) {
 			std::cout << find_hamiltonian_path(m, n, j, i, s, t) << " "; 
@@ -1499,6 +1697,33 @@ int main() {
 	
 	
 	std::cout << x << '\n';
-
+	*/
+	/*
+	auto start = std::chrono::high_resolution_clock::now();
+	std::cout << find_hamiltonian_path(m, n, std::rand() % m, std::rand() % n, s, t) << '\n';
+	auto stop = std::chrono::high_resolution_clock::now();
+	auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
+	std::cout << "Time spent: " << duration.count() << " microseconds\n";
+	*/
+	
+	for(int i = 0; i < 4*n - 4; ++i) {
+		for(int j = 0; j < m; ++j) {
+			std::cout << find_hamiltonian_path_L(m, n, j, i, s, t) << " ";
+		}
+		std::cout << '\n';
+	}
+	
+	for(int i = 4*n - 4; i < 5*n - 4; ++i) {
+		for(int j = 0; j < 3*m - 2; ++j) {
+			std::cout << find_hamiltonian_path_L(m, n, j, i, s, t) << " ";
+		}
+		std::cout << '\n';
+	}
+	
+	for(int i = 0; i < (5*n - 4)*m + n * (2*m - 2); ++i) {
+		x = find_hamiltonian_path_L(m, n, x.second, x.first, s, t);
+	}
+	std::cout << x << '\n';
+	
 	return 0;
 }
