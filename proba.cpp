@@ -1663,7 +1663,109 @@ std::pair<int, int> find_hamiltonian_path_L(int m, int n, int x, int y, const st
 	}
 	
 	return {-1, -1};
+}
+
+std::pair<int, int> find_hamiltonian_path_C(int m, int n, int x, int y, const std::pair<int, int>& s, const std::pair<int, int>& t) {
+	// pokusavamo prvo da podelimo graf na L i R
+	// ako ne uspe, onda radimo split
+	// u obrnutom L su ako nijedan nije u malom pravougaoniku dole desno
+	// u L su ako nijedan nije u malom pravougaoniku gore desno
+	if(!(s.second >= m and s.first >= 4*n - 4) and !(t.first >= 4*n - 4 and t.second >= m)) {
+		// radimo strip sa obrnutim L i donjim desnim pravougaonikom
+		auto s1 = reflect_over_x(s.second, s.first, 5*n - 4);
+		auto t1 = reflect_over_x(t.second, t.first, 5*n - 4);
+		if(x >= m and y >= 4*n - 4) {
+			// ciklus
+			// prvo odredimo orijentaciju
+			bool orientation;
+			auto ret = find_hamiltonian_path_L(m, n, m - 1, 0, s1, t1);
+			if(ret.second == m - 1) {
+				orientation = true;
+			} else {
+				ret = find_hamiltonian_path_L(m, n, m - 1, 1, s1, t1);
+				if(ret.second == m - 1 and !ret.first) {
+					orientation = false;
+				} else if(ret.second == m - 1) {
+					orientation = true;
+				} else {
+					ret = find_hamiltonian_path_L(m, n, m - 1, 2, s1, t1);
+					if(ret.first == 1) {
+						orientation = false;
+					} else {
+						orientation = true;
+					}
+				}
+			}
+			
+			if(x == m and y == 5*n - 5 - ret.first) {
+				return go_left(x, y);
+			}
+			
+			if(orientation) {
+				return H_C_M2_M4_CCW(2*m - 2, n, x - m, y - 4*n + 4) + std::pair{4*n - 4, m};
+			} else {
+				return H_C_M2_M4_CCW(2*m - 2, n, x - m, y - 4*n + 4) + std::pair{4*n - 4, m};
+			}
+			
+		} else {
+			// put
+			// moracemo da reflektujemo sve po x-osi
+			// jer je ovde slovo L obrnuto
+			// posmatramo donje tri tacke na granici sa ciklusom
+			// primenjujemo slican metod kao za L
+			// te tri tacke kada se reflektuju imaju koordinate (m - 1, 0), (m - 1, 1), (m - 1, 2)
+			if(find_hamiltonian_path_L(m, n, m - 1, 0, s1, t1).second == m - 1) {
+				if(x == m - 1 and y == 5*n - 5) return go_right(x, y);
+			} else if(find_hamiltonian_path_L(m, n, m - 1, 1, s1, t1).second == m - 1) {
+				if(x == m - 1 and y == 5*n - 6) return go_right(x, y);
+			} else if(find_hamiltonian_path_L(m, n, m - 1, 2, s1, t1).second == m - 1) {
+				if(x == m - 1 and y == 5*n - 7) return go_right(x, y);
+			}
+			
+			auto ret = find_hamiltonian_path_L(m, n, x, 5*n - 5 - y, s1, t1);
+			if(ret.first == -1 or ret.second == -1) return {-1, -1};
+			return reflect_over_x(ret.second, ret.first, 5*n - 4);
+		}
+		
+	} else if(!(s.second >= m and s.first < n) and !(t.second >= m and t.first < n)) {
+		// radimo strip sa obrnutim L i gornjim desnim pravougaonikom
+		// ovde mozemo ceo graf da okrenemo i da svedemo na slucaj sa obrnutim L
+		auto s1 = reflect_over_x(s.second, s.first, 5*n - 4);
+		auto t1 = reflect_over_x(t.second, t.first, 5*n - 4);
+		auto ret = find_hamiltonian_path_C(m, n, x, 5*n - 5 - y, s1, t1);
+		if(ret.first == -1 or ret.second == -1) return {-1, -1};
+		return reflect_over_x(ret.second, ret.first, 5*n - 4);
+	} else {
+		// radimo split
+		// ako je t u obrnutom L, onda reflektujemo
+		// t je u obrnutom L ako je s zauzeo donji desni pravougaonik
+		if(s.second >= m and s.first >= 4*n - 4) {
+			auto s1 = reflect_over_x(s.second, s.first, 5*n - 4);
+			auto t1 = reflect_over_x(t.second, t.first, 5*n - 4);
+			auto ret = find_hamiltonian_path_C(m, n, x, 5*n - 5 - y, s1, t1);
+			if(ret.first == -1 or ret.second == -1) return {-1, -1};
+			return reflect_over_x(ret.second, ret.first, 5*n - 4);
+		} else {
+			// t je u pravom L
+			// posmatramo tacke (m, 0) i (m, 1)
+			// gornji desni pravougaonik je paran
+			// pa zato biramo tacku suprotne boje od s
+			// da nam bude p
+			std::pair<int, int> p1 = {!((s.first + s.second + m) % 2), 0};
+			std::pair<int, int> s1 = {s.first, s.second - m};
+			if(x == m and y == p1.first) return go_left(x, y);
+			
+			if(x >= m and y < n) {
+				return find_hamiltonian_path(2*m - 2, n, x - m, y, s1, p1) + std::pair{0, m};
+			} else {
+				std::pair<int, int> q = {p1.first, m - 1};
+				return find_hamiltonian_path_L(m, n, x, y, q, t);
+			}
+		}
+	}
 	
+	return {-1, -1};
+
 }
 
 int main() {
@@ -1705,7 +1807,7 @@ int main() {
 	auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
 	std::cout << "Time spent: " << duration.count() << " microseconds\n";
 	*/
-	
+	/*
 	for(int i = 0; i < 4*n - 4; ++i) {
 		for(int j = 0; j < m; ++j) {
 			std::cout << find_hamiltonian_path_L(m, n, j, i, s, t) << " ";
@@ -1722,6 +1824,33 @@ int main() {
 	
 	for(int i = 0; i < (5*n - 4)*m + n * (2*m - 2); ++i) {
 		x = find_hamiltonian_path_L(m, n, x.second, x.first, s, t);
+	}
+	std::cout << x << '\n';
+	*/
+	
+	for(int i = 0; i < n; ++i) {
+		for(int j = 0; j < 3*m - 2; ++j) {
+			std::cout << find_hamiltonian_path_C(m, n, j, i, s, t) << " ";
+		}
+		std::cout << '\n';
+	}
+	
+	for(int i = n; i < 4*n - 4; ++i) {
+		for(int j = 0; j < m; ++j) {
+			std::cout << find_hamiltonian_path_C(m, n, j, i, s, t) << " ";
+		}
+		std::cout << '\n';
+	}
+	
+	for(int i = 4*n - 4; i < 5*n - 4; ++i) {
+		for(int j = 0; j < 3*m - 2; ++j) {
+			std::cout << find_hamiltonian_path_C(m, n, j, i, s, t) << " ";
+		}
+		std::cout << '\n';
+	}
+	
+	for(int i = 0; i < (5*n - 4)*m + 2* n * (2*m - 2); ++i) {
+		x = find_hamiltonian_path_C(m, n, x.second, x.first, s, t);
 	}
 	std::cout << x << '\n';
 	
