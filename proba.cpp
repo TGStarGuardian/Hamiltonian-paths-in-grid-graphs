@@ -514,6 +514,7 @@ std::pair<int, int> find_path_m5(int m, int n, int x, int y, const std::pair<int
 			return ret;
 		}
 	}
+
 	
 	if(m >= 4 and n == 3) {
 		// gornja tacka je crna
@@ -1974,6 +1975,12 @@ std::pair<int, int> find_hamiltonian_path_F(int m, int n, int x, int y, const st
 				if(x == m - 1 and y == 1) return go_right(x, y);
 				return H_C_M1_M3_CCW(m, 2*n - 2, x, y);
 			} else {
+				// posto su m i n neparni
+				// onda je ovo slucaj kada je u ciklusu
+				// M neparno i N parno
+				// tada u CCW slucaju (m - 1, 0) ide levo
+				// a u CW ide dole
+				// zato je mozemo uvek preusmeriti nadesno
 				if(x == m - 1 and !y) return go_right(x, y);
 				return H_C_M3_CW(m, 2*n - 2, x, y);
 			}
@@ -2093,12 +2100,48 @@ std::pair<int, int> find_hamiltonian_path_F(int m, int n, int x, int y, const st
 	// proveravamo da li je s u L, t u malom
 	if(!(s.second >= m and s.first >= 2*n - 2) and t.second >= m and t.first >= 2*n - 2) {
 		// radimo split
+		// trazimo q na ivici od malog tako da ima puta izmedju q i t
+		// mali je parne velicine
+		std::pair<int, int> q1 = {!((t.first + t.second + m) % 2), 0};
+		std::pair<int, int> t1 = {t.first - 2*n + 2, t.second - m};
+		if(x >= m and y >= 2*n - 2 and y < 3*n - 2) {
+			auto ret = find_hamiltonian_path(2*m - 4, n, x - m, y - 2*n + 2, q1, t1);
+			if(ret.first == -1 or ret.second == -1) return {-1, -1};
+			ret.first += 2*n - 2;
+			ret.second += m;
+			return ret;
+		}
+		// moramo da reflektujemo zbog L
+		if(x == m - 1 and y == q1.first + 2*n - 2) return go_right(x, y);
+		
+		std::pair<int, int> p1 = reflect_over_x(m - 1, q1.first + 2*n - 2, 5*n - 4);
+		std::pair<int, int> s1 = reflect_over_x(s.second, s.first, 5*n - 4);
+		auto ret = find_hamiltonian_path_L(m, n, x, 5*n - 5 - y, s1, p1);
+		return reflect_over_x(ret.second, ret.first, 5*n - 4);
 		
 	}
 	
 	// proveravamo da li je s u malom, t u L
 	if(s.second >= m and s.first >= 2*n - 2 and !(t.second >= m and t.first >= 2*n - 2)) {
 		// radimo split
+		std::pair<int, int> p1 = {!((s.first + s.second + m) % 2), 0};
+		std::pair<int, int> s1 = {s.first - 2*n + 2, s.second - m};
+		if(x >= m and y >= 2*n - 2 and y < 3*n - 2) {
+			if(x == m and y == p1.first + 2*n - 2) return go_left(x, y);
+			auto ret = find_hamiltonian_path(2*m - 4, n, x - m, y - 2*n + 2, s1, p1);
+			if(ret.first == -1 or ret.second == -1) return {-1, -1};
+			ret.first += 2*n - 2;
+			ret.second += m;
+			return ret;
+		}
+				
+		std::pair<int, int> q1 = reflect_over_x(m - 1, p1.first + 2*n - 2, 5*n - 4);
+		std::pair<int, int> t1 = reflect_over_x(t.second, t.first, 5*n - 4);
+		
+		auto ret = find_hamiltonian_path_L(m, n, x, 5*n - 5 - y, q1, t1);
+		if(ret.first == -1 or ret.second == -1) return {-1, -1};
+		return reflect_over_x(ret.second, ret.first, 5*n - 4);
+		
 	}
 	
 	
