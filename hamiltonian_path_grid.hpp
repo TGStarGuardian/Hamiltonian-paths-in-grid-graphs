@@ -1,6 +1,8 @@
 #ifndef HAMILTONIAN_PATH_GRID_HPP
 #define HAMILTONIAN_PATH_GRID_HPP
 
+#include<utility>
+
 bool has_hamiltonian_cycle(int width, int height);
 
 bool has_hamiltonian_path(int m, int n, std::pair<int, int> s, std::pair<int, int> t);

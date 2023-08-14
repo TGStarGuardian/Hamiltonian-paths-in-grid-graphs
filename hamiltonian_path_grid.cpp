@@ -1,8 +1,5 @@
-#include <iostream>
 #include <vector>
 #include <array>
-#include <cstdlib>
-#include <chrono>
 #include "hamiltonian_path_grid.hpp"
 
 constexpr inline std::pair<int, int> go_left(int x, int y) {
@@ -19,16 +16,6 @@ constexpr inline std::pair<int, int> go_up(int x, int y) {
 
 constexpr inline std::pair<int, int> go_down(int x, int y) {
 	return {y + 1, x};
-}
-
-std::istream& operator>>(std::istream& is, std::pair<int, int>& p) {
-	is >> p.first >> p.second;
-	return is;
-}
-
-std::ostream& operator<<(std::ostream& os, const std::pair<int, int>& p) {
-	os << '(' << p.first << ", " << p.second << ')';
-	return os;
 }
 
 bool operator==(std::pair<int, int>& s, std::pair<int, int>& t) {
@@ -217,16 +204,6 @@ std::pair<int, int> vertical_trisection(int m, int n, int x, int y, const std::p
 
 typedef struct peeling {
 	int r1, r2, r3, r4;
-
-	friend std::ostream& operator<<(std::ostream& os, peeling& p) {
-		os
-		<< "r1: " << p.r1
-		<< ", r2: " << p.r2
-		<< ", r3: " << p.r3
-		<< ", r4: " << p.r4
-		<< '\n';
-		return os;
-	}
 
 } peeling;
 
