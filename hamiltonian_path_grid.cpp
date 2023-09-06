@@ -432,8 +432,8 @@ std::pair<int, int> find_path_m5(int m, int n, int x, int y, const std::pair<int
 	// 3) m neparno, n parno, n >= 4, m >= 3
 	// (s je gore i s je bela) ili (t je gore i t je bela)
 	// 4) m parno, n parno, n >= 4
-	if(n >= 4 and ((n % 2) or !(m % 2) or (m >= 3 and ( (s.first < t.first and is_white(s)) or (s.first > t.first and is_white(t))) ))) return horizontal_trisection(m, n, x, y, s, t);
-	if(m >= 4 and ((m % 2) or !(n % 2) or (n >= 3 and ( (s.second < t.second and is_white(s)) or (s.second > t.second and is_white(t))) ))) return vertical_trisection(m, n, x, y, s, t);
+	if(n >= 4 and ((n % 2) or !(m % 2) or (s.first < t.first and is_white(s)) or (s.first > t.first and is_white(t))) ) return horizontal_trisection(m, n, x, y, s, t);
+	if(m >= 4 and ((m % 2) or !(n % 2) or (s.second < t.second and is_white(s)) or (s.second > t.second and is_white(t)) )) return vertical_trisection(m, n, x, y, s, t);
 	// ako prvi nije prosao, onda je:
 	// n < 4 ili n parno, m neparno, (m < 3 ili leva je crna)
 	// ako drugi nije prosao, onda je:
@@ -1658,6 +1658,8 @@ std::pair<int, int> find_hamiltonian_path_L(int m, int n, int x, int y, const st
 			std::pair<int, int> q1 = {p.first - 4*n + 4, 0}, t1 = {t.first - 4*n + 4, t.second - m};
 			
 			if(!has_hamiltonian_path(m, 5*n - 4, s, p) or !has_hamiltonian_path(2*m - 2, n, q1, t1)) return {-1, -1};
+			
+			if(x == m - 1 and y == p.first) return go_right(x, y);
 			
 			if(x < m) {
 				// spajamo s i p
