@@ -18,77 +18,36 @@ cdef extern from "hamiltonian_path_grid.hpp":
 	
 cdef extern from "hamiltonian_path_grid.cpp":
 	pass
-
-## print("Hello world")
-
-print(has_hamiltonian_cycle(5, 4))
-print(has_hamiltonian_cycle(5, 7))
-
-for i in range(5):
-	s = ""
-	for j in range(5):
-		y, x = find_hamiltonian_path(5, 5, j, i, (0, 0), (1, 1))
-		s += "(" +  str(y) + ", " + str(x) + ")" + " "
-	print(s)
-
-
-s = (4, 4)
-t = (1, 5)
-m = 3
-n = 3
-
-print("E")
-
-for i in range(n):
-	output = ""
-	for j in range(3*m - 2):
-		y, x = find_hamiltonian_path_E(m, n, j, i, s, t)
-		output += "(" +  str(y) + ", " + str(x) + ")" + " "
-	print(output)
-
-for i in range(n, 2*n - 2):
-	output = ""
-	for j in range(m):
-		y, x = find_hamiltonian_path_E(m, n, j, i, s, t)
-		output += "(" +  str(y) + ", " + str(x) + ")" + " "
-	print(output)
-
-for i in range(2*n - 2, 3*n - 2):
-	output = ""
-	for j in range(3*m - 4):
-		y, x = find_hamiltonian_path_E(m, n, j, i, s, t)
-		output += "(" +  str(y) + ", " + str(x) + ")" + " "
-	print(output)
-
-for i in range(3*n - 2, 4*n - 4):
-	output = ""
-	for j in range(m):
-		y, x = find_hamiltonian_path_E(m, n, j, i, s, t)
-		output += "(" +  str(y) + ", " + str(x) + ")" + " "
-	print(output)
 	
-for i in range(4*n - 4, 5*n - 4):
-	output = ""
-	for j in range(3*m - 2):
-		y, x = find_hamiltonian_path_E(m, n, j, i, s, t)
-		output += "(" +  str(y) + ", " + str(x) + ")" + " "
-	print(output)
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
+def findHamiltonianPath(m, n, x, y, s, t):
+	return find_hamiltonian_path(m, n, x, y, s, t)
+	
+def findHamiltonianCycle(m, n, x, y, s, t):
+	return find_hamiltonian_path(m, n, x, y, s, s)
+	
+def findHamiltonianPathL(m, n, x, y, s, t):
+	return find_hamiltonian_path_L(m, n, x, y, s, t)
 
+def findHamiltonianCycleL(m, n, x, y, s, t):
+	return find_hamiltonian_path_L(m, n, x, y, s, s)
+	
+def findHamiltonianPathC(m, n, x, y, s, t):
+	return find_hamiltonian_path_C(m, n, x, y, s, t)
 
+def findHamiltonianCycleC(m, n, x, y, s, t):
+	return find_hamiltonian_path_C(m, n, x, y, s, s)
+	
+def findHamiltonianPathF(m, n, x, y, s, t):
+	return find_hamiltonian_path_F(m, n, x, y, s, t)
 
-
-
-
+def findHamiltonianCycleF(m, n, x, y, s, t):
+	return find_hamiltonian_path_F(m, n, x, y, s, s)
+	
+def findHamiltonianPathE(m, n, x, y, s, t):
+	return find_hamiltonian_path_E(m, n, x, y, s, t)
+	
+def findHamiltonianCycleE(m, n, x, y, s, t):
+	return find_hamiltonian_path_E(m, n, x, y, s, s)	
+	
+	
+	
