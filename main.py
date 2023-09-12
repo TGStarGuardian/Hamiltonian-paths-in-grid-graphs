@@ -1,8 +1,8 @@
 import sys
 from PyQt5 import QtCore, QtGui, QtWidgets, uic
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QLabel, QLineEdit, QPushButton, QComboBox
-from PyQt5.QtGui import QColor
+from PyQt5.QtWidgets import QLabel, QLineEdit, QPushButton, QComboBox, QMessageBox
+from PyQt5.QtGui import QColor, QIcon
 from path import findHamiltonianPath, findHamiltonianPathL, findHamiltonianPathC, findHamiltonianPathF, findHamiltonianPathE
 
 from path import findHamiltonianCycle, findHamiltonianCycleL, findHamiltonianCycleC, findHamiltonianCycleF, findHamiltonianCycleE
@@ -10,6 +10,11 @@ from path import findHamiltonianCycle, findHamiltonianCycleL, findHamiltonianCyc
 class MainWindow(QtWidgets.QMainWindow):
 	def __init__(self):
 		super().__init__()
+		
+		self.help = QPushButton(self, clicked = self.display_help)
+		self.help.move(85, 350)
+		self.help.resize(50, 50)
+		self.help.setIcon(QIcon('help.png'))
 		
 		self.label = QLabel(self)
 		self.label.move(250, 50)
@@ -65,7 +70,8 @@ class MainWindow(QtWidgets.QMainWindow):
 		"F path", "F cycle",
 		"E path", "E cycle"]
 		)
-		self.comboBox_algorithm.move(75, 200)		
+		self.comboBox_algorithm.move(60, 200)
+		self.comboBox_algorithm.adjustSize()		
 
 		self.button_initiate = QPushButton(self, clicked = self.initiate_slides)
 		self.button_initiate.setText("Start")
@@ -116,11 +122,23 @@ class MainWindow(QtWidgets.QMainWindow):
 				self.algorithm = findHamiltonianCycleE
 		
 		self.label.pixmap().fill(Qt.white)
-		self.m = int(self.input_m.text())
-		self.n = int(self.input_n.text())
-		self.s = (int(self.input_s_y.text()), int(self.input_s_x.text()))
-		if self.comboBox_algorithm.currentIndex() % 2 == 0:
-			self.t = (int(self.input_t_y.text()), int(self.input_t_x.text()))
+		try:
+			self.m = int(self.input_m.text())
+			self.n = int(self.input_n.text())
+			self.s = (int(self.input_s_y.text()), int(self.input_s_x.text()))
+			if self.comboBox_algorithm.currentIndex() % 2 == 0:
+				self.t = (int(self.input_t_y.text()), int(self.input_t_x.text()))
+		except:
+			alert_window = QMessageBox(self)
+			alert_window.setWindowTitle("Warning")
+			alert_window.setText("You have not entered the necessary parameters or your parameters are invalid!\n")
+			button = alert_window.exec()
+			
+			if button == QMessageBox.Ok:
+				print("OK")
+					
+			return
+		
 		self.currentPoint = self.s
 		
 		painter = QtGui.QPainter(self.label.pixmap())
@@ -392,9 +410,26 @@ class MainWindow(QtWidgets.QMainWindow):
 	def previous_slide(self):
 		return None
     	
+	def isCycle(self):
+		x = self.algorithm == findHamiltonianCycle or self.algorithm == findHamiltonianCycleL
+		x = x or self.algorithm == findHamiltonianCycleC or self.algorithm == findHamiltonianCycleF
+		x = x or self.algorithm == findHamiltonianCycleE
+		return x
+    	
 	def next_slide(self):
 		tmp = self.algorithm(self.m, self.n, self.currentPoint[1], self.currentPoint[0], self.s, self.t)
 		if tmp[0] == -1 or tmp[1] == -1:
+			if self.currentPoint[0] == self.s[0] and self.currentPoint[1] == self.s[1]:
+				alert_window = QMessageBox(self)
+				alert_window.setWindowTitle("Warning")
+				alert_window.setText("There is no Hamiltonian path/cycle in this case!\n Please, choose other parameters!\n")
+				button = alert_window.exec()
+
+				if button == QMessageBox.Ok:
+					print("OK")
+					
+				return
+			
 			painter = QtGui.QPainter(self.label.pixmap())
 			brush = QtGui.QBrush()
 			brush.setColor(Qt.green)
@@ -404,7 +439,7 @@ class MainWindow(QtWidgets.QMainWindow):
 			step_m = 680 // (self.m + 1)
 			start_n = 10 + (580 % (self.n + 1))
 			start_m = 10 + (680 % (self.m + 1))
-			if self.algorithm != findHamiltonianPath or self.algorithm != findHamiltonianCycle:
+			if self.algorithm != findHamiltonianPath and self.algorithm != findHamiltonianCycle:
 				m1 = 3 * self.m - 2
 				n1 = 5 * self.n - 4
 				step_n = 580 // (n1 + 1)
@@ -425,7 +460,8 @@ class MainWindow(QtWidgets.QMainWindow):
 		step_m = 680 // (self.m + 1)
 		start_n = 10 + (580 % (self.n + 1))
 		start_m = 10 + (680 % (self.m + 1))
-		if self.algorithm != findHamiltonianPath or self.algorithm != findHamiltonianCycle:
+		
+		if self.algorithm != findHamiltonianPath and self.algorithm != findHamiltonianCycle:
 			m1 = 3 * self.m - 2
 			n1 = 5 * self.n - 4
 			step_n = 580 // (n1 + 1)
@@ -436,6 +472,26 @@ class MainWindow(QtWidgets.QMainWindow):
 		self.currentPoint = tmp
 		painter.end()
 		self.label.update()
+		
+	def display_help(self):
+		help_window = QMessageBox(self)
+		help_window.setWindowTitle("Help")
+		help_window.setText("This is an application for rendering Hamiltonian paths and Hamiltonian cycles in graphs of the following types:\n"
+		+ "  1. rectangle\n  2. L\n  3. C\n  4. F\n  5. E\n"
+		+ "Hamiltonian path is a path that traverses each vertex of the graph only once, starting at some point s and ending at some point t.\n"
+		+ "Hamiltonian cycle is a path that traverses each vertex of the graph only once, starting at some point s and ending at that same point.\n"
+		+ "Parameters m and n relate to dimensions of the graph in this way:\n"
+		+ "  1. in rectangular graphs, m is the number of columns, n is the number of rows\n"
+		+ "  2. in other types, the number of columns is 3m - 2, the number of rows is 5n - 4\n"
+		+ "To run this application, enter the valid parameters and press Start to generate the initial slide.\n"
+		+ "Afterwards, press Next to go to the next slide. If, at any point, you decide to go back, press Previous to return to that slide.\n"
+		)
+		
+		help_window.adjustSize()
+		button = help_window.exec()
+
+		if button == QMessageBox.Ok:
+			print("OK")
 
 app = QtWidgets.QApplication(sys.argv)
 window = MainWindow()
