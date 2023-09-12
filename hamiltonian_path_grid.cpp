@@ -1698,7 +1698,28 @@ std::pair<int, int> find_hamiltonian_path_L(int m, int n, int x, int y, const st
 	return {-1, -1};
 }
 
+std::pair<int, int> hamiltonian_cycle_C_CCW(int m, int n, int x, int y) {
+	// ako smo u L, pravimo ciklus u L
+	// ako smo u gornjem malog pravougaoniku, pravimo ciklus tu
+	// spajamo tacku (1, m - 1) sa njom desno
+	// spajamo tacku (0, m) sa njom levo
+	if(x == m - 1 and y == 1) return go_right(x, y);
+	if(x == m and !y) return go_left(x, y);
+	
+	if(x >= m and y < n) {
+		auto ret = H_C_M2_M4_CCW(2*m - 2, n, x - m, y);
+		ret.second += m;
+		return ret;
+	} else {
+		return hamiltonian_cycle_L_CCW(m, n, x, y);
+	}
+
+}
+
 std::pair<int, int> find_hamiltonian_path_C(int m, int n, int x, int y, const std::pair<int, int>& s, const std::pair<int, int>& t) {
+	if(s == t) {
+		return hamiltonian_cycle_C_CCW(m, n, x, y);
+	}
 	// pokusavamo prvo da podelimo graf na L i R
 	// ako ne uspe, onda radimo split
 	// u obrnutom L su ako nijedan nije u malom pravougaoniku dole desno
@@ -1810,6 +1831,7 @@ std::pair<int, int> find_hamiltonian_path_C(int m, int n, int x, int y, const st
 	return {-1, -1};
 
 }
+
 
 std::pair<int, int> find_hamiltonian_path_F(int m, int n, int x, int y, const std::pair<int,int>& s, const std::pair<int, int>& t) {
 	// proveravamo prvo da li su u L oba

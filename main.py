@@ -216,7 +216,7 @@ class MainWindow(QtWidgets.QMainWindow):
 					painter.setBrush(brush)
 					painter.drawRect(start_m + step_m * (r4 + 1), start_n, step_m * (self.m - r4 - 1), step_n * self.n)
 					
-		elif self.comboBox_algorithm.currentIndex() < 4:
+		elif self.comboBox_algorithm.currentIndex() < 6:
 			# crtamo L
 			m1 = 3 * self.m - 2
 			n1 = 5 * self.n - 4
@@ -248,8 +248,21 @@ class MainWindow(QtWidgets.QMainWindow):
 			for i in range(self.n + 1):
 				painter.drawLine(start_m, tmp_n, end_m1, tmp_n)
 				tmp_n += step_n
+			
+			# crtamo gornji krak slova C
+			tmp_m = start_m
+			tmp_n = start_n
+			if self.comboBox_algorithm.currentIndex() > 3:
+				for j in range(3*self.m - 1):
+					painter.drawLine(tmp_m, start_n, tmp_m, end_n)
+					tmp_m += step_m
 				
-						# oznacavamo s
+				for i in range(self.n + 1):
+					painter.drawLine(start_m, tmp_n, end_m1, tmp_n)
+					tmp_n += step_n
+				
+				
+			# oznacavamo s
 			brush = QtGui.QBrush()
 			brush.setColor(Qt.green)
 			brush.setStyle(Qt.SolidPattern)
@@ -269,12 +282,110 @@ class MainWindow(QtWidgets.QMainWindow):
 				for j in range(self.m):
 					if (i + j) % 2 == 1:
 						painter.drawRect(start_m + step_m * j, start_n + step_n * i, step_m, step_n)
-			print(3*self.m - 2)
+			
 			for i in range(4*self.n - 4, 5*self.n - 4):
 				for j in range(self.m, 3*self.m - 2):
 					if (i + j) % 2 == 1:
 						painter.drawRect(start_m + step_m * j, start_n + step_n * i, step_m, step_n)
+						
+			if self.comboBox_algorithm.currentIndex() > 3:
+				for i in range(self.n):
+					for j in range(self.m, 3*self.m - 2):
+						if (i + j) % 2 == 1:
+							painter.drawRect(start_m + step_m * j, start_n + step_n * i, step_m, step_n)
+							
+		else:
+			m1 = 3 * self.m - 2
+			n1 = 5 * self.n - 4
+			step_n = 580 // (n1 + 1)
+			step_m = 680 // (m1 + 1)
+			start_n = 10 + (580 % (n1 + 1))
+			start_m = 10 + (680 % (m1 + 1))
+			start_n1 = start_n + step_n * (4 * self.n - 4)
+			start_small_n = start_n + step_n * (2*self.n - 2)
+			end_small_n = start_n + step_n * (3*self.n - 2)
+			end_small_m = start_m + step_m * (3*self.m - 4)
+			end_n1 = start_n + step_n * n1
+			end_m1 = start_m + step_m * m1
+			end_n = start_n + step_n * self.n
+			end_m = start_n + step_m * self.m
+			tmp_n = start_n
+			tmp_m = start_m
 			
+			for j in range(self.m + 1):
+				painter.drawLine(tmp_m, start_n, tmp_m, end_n1)
+				tmp_m += step_m
+				
+			for j in range(2*self.m - 2):
+				painter.drawLine(tmp_m, start_n, tmp_m, end_n)
+				if self.comboBox_algorithm.currentIndex() > 7:
+					painter.drawLine(tmp_m, start_n1, tmp_m, end_n1)
+				if j < 2*self.m - 4:
+					painter.drawLine(tmp_m, start_small_n, tmp_m, end_small_n)
+				tmp_m += step_m
+			
+			for i in range(self.n + 1):
+				painter.drawLine(start_m, tmp_n, end_m1, tmp_n)
+				tmp_n += step_n
+			
+			for i in range(self.n - 3):
+				painter.drawLine(start_m, tmp_n, end_m, tmp_n)
+				tmp_n += step_n
+			
+			for i in range(self.n + 1):
+				painter.drawLine(start_m, tmp_n, end_small_m, tmp_n)
+				tmp_n += step_n
+			
+			if self.comboBox_algorithm.currentIndex() < 8:
+				for i in range(2*self.n - 2):
+					painter.drawLine(start_m, tmp_n, end_m, tmp_n)
+					tmp_n += step_n
+			else:
+				for i in range(self.n - 3):
+					painter.drawLine(start_m, tmp_n, end_m, tmp_n)
+					tmp_n += step_n
+					
+				for i in range(self.n + 1):
+					painter.drawLine(start_m, tmp_n, end_m1, tmp_n)
+					tmp_n += step_n
+				
+			# oznacavamo s
+			brush = QtGui.QBrush()
+			brush.setColor(Qt.green)
+			brush.setStyle(Qt.SolidPattern)
+			painter.setBrush(brush)
+			painter.drawRect(start_m + step_m * self.s[1], start_n + step_n * self.s[0], step_m, step_n)
+			# oznacavamo t
+			if self.comboBox_algorithm.currentIndex() % 2 == 0:
+				brush.setColor(Qt.red)
+				painter.setBrush(brush)
+				painter.drawRect(start_m + step_m * self.t[1], start_n + step_n * self.t[0], step_m, step_n)
+			
+			brush.setColor(Qt.black)
+			brush.setStyle(Qt.BDiagPattern)
+			painter.setBrush(brush)
+			# sencimo crna polja
+			for i in range(5*self.n - 4):
+				for j in range(self.m):
+					if (i + j) % 2 == 1:
+						painter.drawRect(start_m + step_m * j, start_n + step_n * i, step_m, step_n)
+						
+			for j in range(self.m, 3*self.m - 2):
+				for i in range(self.n):
+					if (i + j) % 2 == 1:
+						painter.drawRect(start_m + step_m * j, start_n + step_n * i, step_m, step_n)
+						
+				for i in range(2*self.n - 2, 3*self.n - 2):
+					if (i + j) % 2 == 1 and j < 3*self.m - 4:
+						painter.drawRect(start_m + step_m * j, start_n + step_n * i, step_m, step_n)
+			
+			if self.comboBox_algorithm.currentIndex() > 7:
+				for i in range(4*self.n - 4, 5*self.n - 4):
+					for j in range(self.m, 3*self.m - 2):
+						if (i + j) % 2 == 1:
+							painter.drawRect(start_m + step_m * j, start_n + step_n * i, step_m, step_n)
+			
+				
 		painter.end()
 		self.label.update()
     	
