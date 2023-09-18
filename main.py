@@ -418,7 +418,8 @@ class MainWindow(QtWidgets.QMainWindow):
     	
 	def next_slide(self):
 		tmp = self.algorithm(self.m, self.n, self.currentPoint[1], self.currentPoint[0], self.s, self.t)
-		if tmp[0] == -1 or tmp[1] == -1:
+		print(str(self.currentPoint) + str(tmp))
+		if tmp[0] < 0 or tmp[1] < 0:
 			if self.currentPoint[0] == self.s[0] and self.currentPoint[1] == self.s[1]:
 				alert_window = QMessageBox(self)
 				alert_window.setWindowTitle("Warning")

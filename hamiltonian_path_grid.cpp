@@ -1136,10 +1136,10 @@ std::pair<int, int> hamiltonian_path_util(int m, int n, int x, int y, const std:
 					if(x <= r.r3) {
 						// u M1 smo
 						// prosetamo se kroz ceo M1
-						// tacku (r.r3, 1) spajamo sa M3
+						// tacku (r.r3, r.r1) spajamo sa M3
 						// spajamo se sa M4 ako M2 ne postoji
 						// spajanje je u tacki (r.r3, n - 2)
-						if(x == r.r3 and (y == 1 or (!m2_exists(r, m) and y == n - 2))) return go_right(x, y);
+						if(x == r.r3 and (y == r.r1 or (!m2_exists(r, m) and y == n - 2))) return go_right(x, y);
 						return H_C_M1_CW(r.r3 + 1, n, x, y);
 					
 					} else if(x > r.r4) {
@@ -1510,8 +1510,14 @@ std::pair<int, int> hamiltonian_cycle_L_CW(int m, int n, int x, int y) {
 	return ret;
 }
 
+bool has_hamiltonian_path_L(int m, int n, std::pair<int, int>& s, std::pair<int, int>& t) {
+	auto ret = find_hamiltonian_path_L(m, n, s.second, s.first, s, t);
+	return (ret.first >= 0 and ret.second >= 0);
+}
+
 // algoritam za Hamiltonov put u L
 std::pair<int, int> find_hamiltonian_path_L(int m, int n, int x, int y, const std::pair<int, int>& s, const std::pair<int, int>& t) {
+	
 	if(s == t) return hamiltonian_cycle_L_CCW(m, n, x, y);
 	// prvo proveravamo da li su u istom regionu
 	if(s.second < m and t.second < m) {
@@ -1677,11 +1683,18 @@ std::pair<int, int> find_hamiltonian_path_L(int m, int n, int x, int y, const st
 			// onda je s na horizontali
 			// tacku p biramo tako da bude suprotne boje od s
 			// jer je onaj mali deo na horizontali parni graf
-			std::pair<int, int> q = {4*n - 3 - ((s.first + s.second + m) % 2), m - 1};
-			std::pair<int, int> p1 = {q.first - 4*n + 4, q.second + 1 - m};
+			// (m - 1, 4*n - 3) je bele boje akko je m neparan
+			// q je bele boje akko je t crne boje
+			// t belo i m parno: q = (m - 1, 4*n - 3)
+			// t belo i m neparno: q = (m - 1, 4*n - 4)
+			// t crno i m parno: q = (m - 1, 4*n - 4)
+			// t crno i m neparno: q = (m - 1, 4*n - 3)
+			// (A and B) or (!A and !B) --> q = (m - 1, 4*n - 3)
+			std::pair<int, int> q = {4*n - 3 - ((t.first + t.second + m) % 2), m - 1};
+			std::pair<int, int> p1 = {q.first - 4*n + 4, 0};
 			std::pair<int, int> s1 = {s.first - 4*n + 4, s.second - m};
-			if(!has_hamiltonian_path(m, 5*n - 4, q, t) or !has_hamiltonian_path(2*m - 2, x, s1, p1)) return {-1, -1};
-			if(x == q.second + 1 and y == q.first) return go_left(x, y);
+			if(!has_hamiltonian_path(m, 5*n - 4, q, t) or !has_hamiltonian_path(2*m - 2, n, s1, p1)) return {-1, -1};
+			if(x == m and y == q.first) return go_left(x, y);
 			if(x < m) {
 				// spajamo q sa t
 				return find_hamiltonian_path(m, 5*n - 4, x, y, q, t);
@@ -1716,6 +1729,11 @@ std::pair<int, int> hamiltonian_cycle_C_CCW(int m, int n, int x, int y) {
 
 }
 
+bool has_hamiltonian_path_C(int m, int n, std::pair<int, int>& s, std::pair<int, int>& t) {
+	auto ret = find_hamiltonian_path_C(m, n, s.second, s.first, s, t);
+	return (ret.first >= 0 and ret.second >= 0);
+}
+
 std::pair<int, int> find_hamiltonian_path_C(int m, int n, int x, int y, const std::pair<int, int>& s, const std::pair<int, int>& t) {
 	if(s == t) {
 		return hamiltonian_cycle_C_CCW(m, n, x, y);
@@ -1724,16 +1742,8 @@ std::pair<int, int> find_hamiltonian_path_C(int m, int n, int x, int y, const st
 	// ako ne uspe, onda radimo split
 	// u obrnutom L su ako nijedan nije u malom pravougaoniku dole desno
 	// u L su ako nijedan nije u malom pravougaoniku gore desno
-	if(!(s.second >= m and s.first >= 4*n - 4) and !(t.first >= 4*n - 4 and t.second >= m)) {
-		// radimo strip sa obrnutim L i donjim desnim pravougaonikom
-		// reflektujemo po x-osi
-		auto s1 = reflect_over_x(s.second, s.first, 5*n - 4);
-		auto t1 = reflect_over_x(t.second, t.first, 5*n - 4);
-		auto ret = find_hamiltonian_path_C(m, n, x, 5*n - 5 - y, s1, t1);
-		if(ret.first == -1 or ret.second == -1) return {-1, -1};
-		return reflect_over_x(ret.second, ret.first, 5*n - 4);
 		
-	} else if(!(s.second >= m and s.first < n) and !(t.second >= m and t.first < n)) {
+	if(!(s.second >= m and s.first < n) and !(t.second >= m and t.first < n)) {
 		// radimo strip sa pravim L i gornjim desnim pravougaonikom
 		if(x >= m and y < n) {
 			// ciklus
@@ -1794,11 +1804,20 @@ std::pair<int, int> find_hamiltonian_path_C(int m, int n, int x, int y, const st
 		
 		}
 		
+	} else if(!(s.second >= m and s.first >= 4*n - 4) and !(t.first >= 4*n - 4 and t.second >= m)) {
+		// radimo strip sa obrnutim L i donjim desnim pravougaonikom
+		// reflektujemo po x-osi
+		auto s1 = reflect_over_x(s.second, s.first, 5*n - 4);
+		auto t1 = reflect_over_x(t.second, t.first, 5*n - 4);
+		auto ret = find_hamiltonian_path_C(m, n, x, 5*n - 5 - y, s1, t1);
+		if(ret.first == -1 or ret.second == -1) return {-1, -1};
+		return reflect_over_x(ret.second, ret.first, 5*n - 4);
+		
 	} else {
 		// radimo split
 		// ako je t u obrnutom L, onda reflektujemo
 		// t je u obrnutom L ako je s zauzeo donji desni pravougaonik
-		if(s.second >= m and s.first >= 4*n - 4) {
+		if(!(s.second >= m and s.first >= 4*n - 4)) {
 			auto s1 = reflect_over_x(s.second, s.first, 5*n - 4);
 			auto t1 = reflect_over_x(t.second, t.first, 5*n - 4);
 			auto ret = find_hamiltonian_path_C(m, n, x, 5*n - 5 - y, s1, t1);
@@ -1832,6 +1851,10 @@ std::pair<int, int> find_hamiltonian_path_C(int m, int n, int x, int y, const st
 
 }
 
+bool has_hamiltonian_path_F(int m, int n, std::pair<int, int>& s, std::pair<int, int>& t) {
+	auto ret = find_hamiltonian_path_F(m, n, s.second, s.first, s, t);
+	return (ret.first >= 0 and ret.second >= 0);
+}
 
 std::pair<int, int> find_hamiltonian_path_F(int m, int n, int x, int y, const std::pair<int,int>& s, const std::pair<int, int>& t) {
 	// proveravamo prvo da li su u L oba
@@ -2212,6 +2235,10 @@ std::pair<int, int> find_hamiltonian_path_F(int m, int n, int x, int y, const st
 	return {-1, -1};
 }
 
+bool has_hamiltonian_path_E(int m, int n, std::pair<int, int>& s, std::pair<int, int>& t) {
+	auto ret = find_hamiltonian_path_E(m, n, s.second, s.first, s, t);
+	return (ret.first >= 0 and ret.second >= 0);
+}
 
 std::pair<int, int> find_hamiltonian_path_E(int m, int n, int x, int y, const std::pair<int, int>& s, const std::pair<int, int>& t) {
 	// imamo dva slucaja
