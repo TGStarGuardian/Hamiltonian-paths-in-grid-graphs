@@ -1,3 +1,4 @@
+#include <iostream>
 #include <vector>
 #include <array>
 #include "hamiltonian_path_grid.hpp"
@@ -257,11 +258,6 @@ bool has_hamiltonian_path(int m, int n, std::pair<int, int> s, std::pair<int, in
 		!( (n == 1 and (!is_corner_vertex(s.second, m) or !is_corner_vertex(t.second, m)))
 		 or (m == 1 and (!is_corner_vertex(s.first, n) or !is_corner_vertex(t.first, n)))
 		 or connected_by_non_boundary_edge(s, t, m, n)
-		 // n == 3, m parno...u radu stoji da treba biti izomorfno sa s crna, s.x < t.x (za sy == 1) ili t.x > s.x + 1 (za sy != 1)
-		 // to znaci da mora biti ovo da vazi i kad rotiramo sliku i kad rotiramo uloge za s i t
-		 // znaci, potrebno je obraditi slucaj kada se slika zarotira oko y-ose
-		 // ali tada se menjaju boje
-		 // tako da je potrebno samo razmotriti ovaj slucaj kada je s crna ili kada je t crna 
 		 or (n == 3 and !(m % 2) and ((s.first + s.second) % 2) and ((s.first == 1 and s.second < t.second) or (s.first != 1 and t.second > s.second + 1)))
 		 or (n == 3 and !(m % 2) and ((t.first + t.second) % 2) and ((t.first == 1 and t.second < s.second) or (t.first != 1 and s.second > t.second + 1)))
 		 or (m == 3 and !(n % 2) and ((s.second + s.first) % 2) and ((s.second == 1 and s.first < t.first) or (s.second != 1 and t.first > s.first + 1)))
@@ -448,7 +444,7 @@ std::pair<int, int> find_path_m5(int m, int n, int x, int y, const std::pair<int
 	// ako je n >= 4 i m > 3, prolazi vertikalna trisekcija, jer je m neparno i n parno
 	// ako je m >= 4 i n > 3, prolazi horizontalna trisekcija, jer je m parno i n neparno
 	
-	if(n >= 4 and m == 3) {
+	if(n == 4 and m == 3) {
 		// za m == 1 i m == 2, imamo vec dole obradjene slucajeve
 		// za m == 3, resavamo ovde
 		// tada znamo da je leva tacka crna, jer nije prosao gornji slucaj
@@ -479,7 +475,7 @@ std::pair<int, int> find_path_m5(int m, int n, int x, int y, const std::pair<int
 	}
 
 	
-	if(m >= 4 and n == 3) {
+	if(m == 4 and n == 3) {
 		// gornja tacka je crna
 		if(t.first < s.first) {
 			auto s1 = reflect_over_y(s.second, s.first, m);
@@ -731,7 +727,7 @@ std::pair<int, int> find_path_m5(int m, int n, int x, int y, const std::pair<int
 		}
 	}
 	
-	return {-2, -2};
+	return {-1, -1};
 }
 
 inline bool connectable_left(int m, int n, const std::pair<int, int>& s, const std::pair<int, int>& t) {
@@ -1092,7 +1088,7 @@ std::pair<int, int> hamiltonian_path_util(int m, int n, int x, int y, const std:
 			auto ret = hamiltonian_path_util(m, n, m - x - 1, y, s2, t2, R);
 			if(ret.first == -1 or ret.second == -1) return {-1, -1};
 			return reflect_over_y(ret.second, ret.first, m);
-		} else {
+		} else if(m4_exists(r, n) and connectable_bottom(m1, n1, s1, t1)){
 			// povezujemo sa M4
 			// svodimo na M1 pomocu refleksije po x-osi i rotacije
 			auto s2 = reflect_over_x(s.second, s.first, n);
@@ -1104,6 +1100,8 @@ std::pair<int, int> hamiltonian_path_util(int m, int n, int x, int y, const std:
 			if(ret.first == -1 or ret.second == -1) return {-1, -1};
 			ret = {ret.second, ret.first};
 			return reflect_over_x(ret.second, ret.first, n);
+		} else {
+			return find_path_m5(m, n, x, y, s, t);
 		}
 		
 		
@@ -1293,14 +1291,20 @@ std::pair<int, int> hamiltonian_path_util(int m, int n, int x, int y, const std:
 					r.r1 = -1;
 					return hamiltonian_path_util(m, n, x, y, s, t, r);
 				} else {
-					// ako M4 nema bar 3 reda, reflektujemo po x-osi
+					// ako M4 nema bar 3 reda, ali M3 ima, reflektujemo po x-osi
 					if(n - 1 - r.r2 == 2) {
-						auto s2 = reflect_over_x(s.second, s.first, n);
-						auto t2 = reflect_over_x(t.second, t.first, n);
-						peeling R = {n - 2 - r.r2, n - 2 - r.r1, r.r3, r.r4};
-						auto ret = hamiltonian_path_util(m, n, x, n - y - 1, s2, t2, R);
-						if(ret.first == -1 or ret.second == -1) return {-1, -1};
-						return reflect_over_x(ret.second, ret.first, n);
+						if(r.r1 + 1 > 2) {
+							auto s2 = reflect_over_x(s.second, s.first, n);
+							auto t2 = reflect_over_x(t.second, t.first, n);
+							peeling R = {n - 2 - r.r2, n - 2 - r.r1, r.r3, r.r4};
+							auto ret = hamiltonian_path_util(m, n, x, n - y - 1, s2, t2, R);
+							if(ret.first == -1 or ret.second == -1) return {-1, -1};
+							return reflect_over_x(ret.second, ret.first, n);
+						} else {
+							// pokupimo celo M4
+							r.r2 = n - 1;
+							return hamiltonian_path_util(m, n, x, y, s, t, r);
+						}
 					}
 					// spustamo r.r2 za 1
 					++r.r2;
