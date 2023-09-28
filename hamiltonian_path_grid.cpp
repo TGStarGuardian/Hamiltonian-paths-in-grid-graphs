@@ -1426,11 +1426,13 @@ std::pair<int, int> hamiltonian_path_util(int m, int n, int x, int y, const std:
 				return {ret.second, ret.first};
 			} else if(n1 == 2) {
 				// drugi slucaj
-				// r.r4 postaje s.second
-				r.r4 = s.second;
+				if(m1_exists(r)) {
+					r.r3 = s.second - 1;
+				} else {
+					r.r4 = s.second;
+				}
 				return hamiltonian_path_util(m, n, x, y, s, t, r);
 			} else if(m1 == 2) {
-				// r.r2 postaje s.first
 				r.r2 = s.first;
 				return hamiltonian_path_util(m, n, x, y, s, t, r);
 			} else if(n1 == 3) {
