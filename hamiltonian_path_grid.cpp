@@ -1413,82 +1413,82 @@ std::pair<int, int> hamiltonian_path_util(int m, int n, int x, int y, const std:
 	} else {
 		// pretpostavicemo da je M4 neprazan (jer M3 ili M4 je neprazan)
 		// ako je prazan, reflektujemo po x-osi
-		if(m4_exists(r, n)) {
-			// proverimo zasto se desilo da nema puta u M5
-			if(n1 == 1) {
-				// prvi slucaj
-				if(n - 1 - r.r2 == 2 and r.r1 + 1 == 2) {
-					r.r1 = -1;
-					/*
-					if(is_black(s) and s.second == t.second - 1) {
-						return connect(m, n, x, y, s, t, r, special_case_1);
-					} else if(is_black(t) and t.second == s.second - 1) {
-						// refleksijom svodimo na prethodni slucaj
-						auto s2 = reflect_over_y(s.second, s.first, m);
-						auto t2 = reflect_over_y(t.second, t.first, m);
-						peeling R = {r.r1, r.r2, m - r.r4 - 2, m - r.r3 - 2};
-						auto ret = hamiltonian_path_util(m, n, m - x - 1, y, s2, t2, R);
-						if(ret.first == -1 or ret.second == -1) return {-1, -1};
-						return reflect_over_y(ret.second, ret.first, m);
-					}
-					*/
-					return hamiltonian_path_util(m, n, x, y, s, t, r);
-				} else {
-					// ako M4 nema bar 3 reda i M3 postoji reflektujemo po x-osi
-					if(n - 1 - r.r2 == 2 and m3_exists(r)) {
-						auto s2 = reflect_over_x(s.second, s.first, n);
-						auto t2 = reflect_over_x(t.second, t.first, n);
-						peeling R = {n - 2 - r.r2, n - 2 - r.r1, r.r3, r.r4};
-						auto ret = hamiltonian_path_util(m, n, x, n - y - 1, s2, t2, R);
-						if(ret.first == -1 or ret.second == -1) return {-1, -1};
-						return reflect_over_x(ret.second, ret.first, n);
-					} else if(n - 1 - r.r2 == 2) {
-						r.r2 = n - 1;
-						return hamiltonian_path_util(m, n, x, y, s, t, r);
-					}
-					// spustamo r.r2 za 1
-					++r.r2;
-					return hamiltonian_path_util(m, n, x, y, s, t, r);
-				}
-			} else if(m1 == 1) {
-				// svodimo na prvi slucaj rotacijom
-				std::pair<int, int> s2 = {s.second, s.first}, t2 = {t.second, t.first};
-				peeling R = {r.r3, r.r4, r.r1, r.r2};
-				auto ret = hamiltonian_path_util(n, m, y, x, s2, t2, R);
-				return {ret.second, ret.first};
-			} else if(n1 == 2) {
-				// drugi slucaj
-				if(m1_exists(r)) {
-					r.r3 = s.second - 1;
-				} else {
-					r.r4 = s.second;
-				}
-				return hamiltonian_path_util(m, n, x, y, s, t, r);
-			} else if(m1 == 2) {
-				r.r2 = s.first;
-				return hamiltonian_path_util(m, n, x, y, s, t, r);
-			} else if(n1 == 3) {
-				r.r2 = n - 1;
-				return connect(m, n, x, y, s, t, r, special_case_2);
-				
-			} else {
-				// onda je m1 == 3
-				// svodimo na treci slucaj rotacijom
-				std::pair<int, int> s2 = {s.second, s.first}, t2 = {t.second, t.first};
-				peeling R = {r.r3, r.r4, r.r1, r.r2};
-				auto ret = hamiltonian_path_util(n, m, y, x, s2, t2, R);
-				return {ret.second, ret.first};
+		// proverimo zasto se desilo da nema puta u M5
+		if(n1 == 1) {
+			if(!m4_exists(r, n)) {
+				auto s2 = reflect_over_x(s.second, s.first, n);
+				auto t2 = reflect_over_x(t.second, t.first, n);
+				peeling R = {n - 2 - r.r2, n - 2 - r.r1, r.r3, r.r4};
+				auto ret = hamiltonian_path_util(m, n, x, n - y - 1, s2, t2, R);
+				if(ret.first == -1 or ret.second == -1) return {-1, -1};
+				return reflect_over_x(ret.second, ret.first, n);
 			}
+			// prvi slucaj
+			if(n - 1 - r.r2 == 2 and r.r1 + 1 == 2) {
+				r.r1 = -1;
+				return hamiltonian_path_util(m, n, x, y, s, t, r);
+			} else {
+				// ako M4 nema bar 3 reda i M3 postoji reflektujemo po x-osi
+				if(n - 1 - r.r2 == 2 and m3_exists(r)) {
+					auto s2 = reflect_over_x(s.second, s.first, n);
+					auto t2 = reflect_over_x(t.second, t.first, n);
+					peeling R = {n - 2 - r.r2, n - 2 - r.r1, r.r3, r.r4};
+					auto ret = hamiltonian_path_util(m, n, x, n - y - 1, s2, t2, R);
+					if(ret.first == -1 or ret.second == -1) return {-1, -1};
+					return reflect_over_x(ret.second, ret.first, n);
+				} else if(n - 1 - r.r2 == 2) {
+					r.r2 = n - 1;
+					return hamiltonian_path_util(m, n, x, y, s, t, r);
+				}
+				// spustamo r.r2 za 1
+				++r.r2;
+				return hamiltonian_path_util(m, n, x, y, s, t, r);
+			}
+		} else if(m1 == 1) {
+			// svodimo na prvi slucaj dijagonalnom refleksijom
+			std::pair<int, int> s2 = {s.second, s.first}, t2 = {t.second, t.first};
+			peeling R = {r.r3, r.r4, r.r1, r.r2};
+			auto ret = hamiltonian_path_util(n, m, y, x, s2, t2, R);
+			return {ret.second, ret.first};
+		} else if(n1 == 2) {
+			if(!m4_exists(r, n)) {
+				auto s2 = reflect_over_x(s.second, s.first, n);
+				auto t2 = reflect_over_x(t.second, t.first, n);
+				peeling R = {n - 2 - r.r2, n - 2 - r.r1, r.r3, r.r4};
+				auto ret = hamiltonian_path_util(m, n, x, n - y - 1, s2, t2, R);
+				if(ret.first == -1 or ret.second == -1) return {-1, -1};
+				return reflect_over_x(ret.second, ret.first, n);
+			}
+			// drugi slucaj
+			if(m1_exists(r)) {
+				r.r3 = s.second - 1;
+			} else {
+				r.r4 = s.second;
+			}
+			return hamiltonian_path_util(m, n, x, y, s, t, r);
+		} else if(m1 == 2) {
+			r.r2 = s.first;
+			return hamiltonian_path_util(m, n, x, y, s, t, r);
+		} else if(n1 == 3) {
+			if(!m4_exists(r, n)) {
+				auto s2 = reflect_over_x(s.second, s.first, n);
+				auto t2 = reflect_over_x(t.second, t.first, n);
+				peeling R = {n - 2 - r.r2, n - 2 - r.r1, r.r3, r.r4};
+				auto ret = hamiltonian_path_util(m, n, x, n - y - 1, s2, t2, R);
+				if(ret.first == -1 or ret.second == -1) return {-1, -1};
+				return reflect_over_x(ret.second, ret.first, n);
+			}
+			r.r2 = n - 1;
+			return connect(m, n, x, y, s, t, r, special_case_2);
+			
 		} else {
-			// reflektujemo po x-osi
-			auto s2 = reflect_over_x(s.second, s.first, n);
-			auto t2 = reflect_over_x(t.second, t.first, n);
-			peeling R = {n - 2 - r.r2, n - 2 - r.r1, r.r3, r.r4};
-			auto ret = hamiltonian_path_util(m, n, x, n - y - 1, s2, t2, R);
-			if(ret.first == -1 or ret.second == -1) return {-1, -1};
-			return reflect_over_x(ret.second, ret.first, n);
+			// onda je m1 == 3
+			// svodimo na treci slucaj rotacijom
+			std::pair<int, int> s2 = {s.second, s.first}, t2 = {t.second, t.first};
+			peeling R = {r.r3, r.r4, r.r1, r.r2};
+			auto ret = hamiltonian_path_util(n, m, y, x, s2, t2, R);
+			return {ret.second, ret.first};
 		}
-	
 	}
 	
 	return {-1, -1};
