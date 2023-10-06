@@ -449,9 +449,18 @@ std::pair<int, int> find_path_m5(int m, int n, int x, int y, const std::pair<int
 		// za m == 3, resavamo ovde
 		// tada znamo da je leva tacka crna, jer nije prosao gornji slucaj
 		// ovde je junction vertex na sredini
-		// ako je t iznad s, onda okrenemo graf po x-osi
+		// ako je t desno od s, onda okrenemo graf po y-osi
 			
 		if(t.second < s.second) {
+			std::cout << 1;
+			auto s1 = reflect_over_y(s.second, s.first, m);
+			auto t1 = reflect_over_y(t.second, t.first, m);
+			auto ret = find_path_m5(m, n, m - 1 - x, y, s1, t1);
+			if(ret.first == -1 || ret.second == -1) return {-1, -1};
+			return reflect_over_y(ret.second, ret.first, m);
+		}
+		
+		if(t.second == s.second and t.first < s.first) {
 			auto s1 = reflect_over_x(s.second, s.first, n);
 			auto t1 = reflect_over_x(t.second, t.first, n);
 			auto ret = find_path_m5(m, n, x, n - 1 - y, s1, t1);
@@ -459,7 +468,7 @@ std::pair<int, int> find_path_m5(int m, int n, int x, int y, const std::pair<int
 			return reflect_over_x(ret.second, ret.first, n);
 		}
 			
-		// sada je s gore
+		// sada je s levo
 		// spajamo s sa (1, 1), (1, 1) sa (2, 1), a (2, 1) sa t
 		if(y <= 1) {
 			if(x == 1 && y == 1) return {2, 1};
@@ -478,13 +487,20 @@ std::pair<int, int> find_path_m5(int m, int n, int x, int y, const std::pair<int
 	if(m == 4 and n == 3) {
 		// gornja tacka je crna
 		if(t.first < s.first) {
+			auto s1 = reflect_over_x(s.second, s.first, n);
+			auto t1 = reflect_over_x(t.second, t.first, n);
+			auto ret = find_path_m5(m, n, x, n - 1 - y, s1, t1);
+			if(ret.first == -1 || ret.second == -1) return {-1, -1};
+			return reflect_over_x(ret.second, ret.first, n);
+		}
+		
+		if(t.first == s.first and t.second < s.second) {
 			auto s1 = reflect_over_y(s.second, s.first, m);
 			auto t1 = reflect_over_y(t.second, t.first, m);
 			auto ret = find_path_m5(m, n, m - 1 - x, y, s1, t1);
 			if(ret.first == -1 || ret.second == -1) return {-1, -1};
 			return reflect_over_y(ret.second, ret.first, m);
-		}
-		
+		}		
 		// znamo sada da je s gore i da je crna
 		// ako nije t.second == s.second + 1 and s.first != 1
 		// onda reflektujemo
@@ -1013,6 +1029,16 @@ std::pair<int, int> special_case_1(int m, int n, int x, int y, const std::pair<i
 }
 
 std::pair<int, int> special_case_2(int m, int n, int x, int y, const std::pair<int, int>& s, const std::pair<int, int>& t) {
+	// kada je m5 = 3, n je parno
+	// kada je n5 = 3, m je parno
+	// hocemo sve da svedemo na drugi slucaj
+	if(m % 2) {
+		auto s1 = std::pair{s.second, s.first};
+		auto t1 = std::pair{t.second, t.first};
+		auto ret = special_case_2(n, m, y, x, s1, t1);
+		if(ret.first == -1 || ret.second == -1) return {-1, -1};
+		return std::pair{ret.second, ret.first};
+	}
 	if(s.second >= t.second) {
 		auto s1 = reflect_over_y(s.second, s.first, m);
 		auto t1 = reflect_over_y(t.second, t.first, m);
@@ -1025,12 +1051,14 @@ std::pair<int, int> special_case_2(int m, int n, int x, int y, const std::pair<i
 		// tretiracemo sredisnji deo kao M2
 		std::pair<int, int> p = {2, 0}, q1 = {2, 1}, t1 = {t.first, t.second - m + 2};
 		if(x < 2 and y < 3) {
-			if(path_n_2(3, 1, 0, s, p).second) {
-				if(x == 1 and !y) return go_right(x, y);
-			} else if(path_n_2(3, 1, 1, s, p).second) {
-				if(x == 1 and y == 1) return go_right(x, y);
-			} else {
-				if(x == 1 and y == 2) return go_right(x, y);
+			if(m > 4) {
+				if(path_n_2(3, 1, 0, s, p).second) {
+					if(x == 1 and !y) return go_right(x, y);
+				} else if(path_n_2(3, 1, 1, s, p).second) {
+					if(x == 1 and y == 1) return go_right(x, y);
+				} else {
+					if(x == 1 and y == 2) return go_right(x, y);
+				}	
 			}
 			
 			return path_n_2(3, x, y, s, p); 
@@ -1114,7 +1142,7 @@ inline std::pair<int, int> connect_to_path(int m, int n, int x, int y, const pee
 	}
 }
 
-std::pair<int, int> hamiltonian_path_util(int m, int n, int x, int y, const std::pair<int, int>& s, const std::pair<int, int>& t, peeling& r);
+// std::pair<int, int> hamiltonian_path_util(int m, int n, int x, int y, const std::pair<int, int>& s, const std::pair<int, int>& t, peeling& r);
 
 template<typename f>
 std::pair<int, int> connect(int m, int n, int x, int y, const std::pair<int, int>& s, const std::pair<int, int>& t, const peeling& r, const f& find_m5) {
@@ -1182,14 +1210,14 @@ std::pair<int, int> connect(int m, int n, int x, int y, const std::pair<int, int
 			// svodimo na slucaj sa M1
 			peeling R = {r.r3, r.r4, r.r1, r.r2};
 			std::pair<int, int> s2 = {s.second, s.first}, t2 = {t.second, t.first};
-			auto ret = hamiltonian_path_util(n, m, y, x, s2, t2, R);
+			auto ret = connect(n, m, y, x, s2, t2, R, find_m5);
 			return {ret.second, ret.first};
 		} else if(m2_exists(r, m) and connectable_right(m1, n1, s1, t1)) {
 			// svodimo na M1 pomocu refleksije po y-osi
 			auto s2 = reflect_over_y(s.second, s.first, m);
 			auto t2 = reflect_over_y(t.second, t.first, m);
 			peeling R = {r.r1, r.r2, m - r.r4 - 2, m - r.r3 - 2};
-			auto ret = hamiltonian_path_util(m, n, m - x - 1, y, s2, t2, R);
+			auto ret = connect(m, n, m - x - 1, y, s2, t2, R, find_m5);
 			if(ret.first == -1 or ret.second == -1) return {-1, -1};
 			return reflect_over_y(ret.second, ret.first, m);
 		} else if(m4_exists(r, n) and connectable_bottom(m1, n1, s1, t1)){
@@ -1200,12 +1228,12 @@ std::pair<int, int> connect(int m, int n, int x, int y, const std::pair<int, int
 			s2 = {s2.second, s2.first};
 			t2 = {t2.second, t2.first};
 			peeling R = {r.r3, r.r4, n - 2 - r.r2, n - 2 - r.r1};
-			auto ret = hamiltonian_path_util(n, m, n - y - 1, x, s2, t2, R);
+			auto ret = connect(n, m, n - y - 1, x, s2, t2, R, find_m5);
 			if(ret.first == -1 or ret.second == -1) return {-1, -1};
 			ret = {ret.second, ret.first};
 			return reflect_over_x(ret.second, ret.first, n);
 		} else {
-			return find_path_m5(m, n, x, y, s, t);
+			return find_m5(m, n, x, y, s, t);
 		}
 }
 
@@ -1391,6 +1419,7 @@ std::pair<int, int> hamiltonian_path_util(int m, int n, int x, int y, const std:
 				// prvi slucaj
 				if(n - 1 - r.r2 == 2 and r.r1 + 1 == 2) {
 					r.r1 = -1;
+					/*
 					if(is_black(s) and s.second == t.second - 1) {
 						return connect(m, n, x, y, s, t, r, special_case_1);
 					} else if(is_black(t) and t.second == s.second - 1) {
@@ -1401,18 +1430,21 @@ std::pair<int, int> hamiltonian_path_util(int m, int n, int x, int y, const std:
 						auto ret = hamiltonian_path_util(m, n, m - x - 1, y, s2, t2, R);
 						if(ret.first == -1 or ret.second == -1) return {-1, -1};
 						return reflect_over_y(ret.second, ret.first, m);
-					} else {
-						return hamiltonian_path_util(m, n, x, y, s, t, r);
 					}
+					*/
+					return hamiltonian_path_util(m, n, x, y, s, t, r);
 				} else {
-					// ako M4 nema bar 3 reda, reflektujemo po x-osi
-					if(n - 1 - r.r2 == 2) {
+					// ako M4 nema bar 3 reda i M3 postoji reflektujemo po x-osi
+					if(n - 1 - r.r2 == 2 and m3_exists(r)) {
 						auto s2 = reflect_over_x(s.second, s.first, n);
 						auto t2 = reflect_over_x(t.second, t.first, n);
 						peeling R = {n - 2 - r.r2, n - 2 - r.r1, r.r3, r.r4};
 						auto ret = hamiltonian_path_util(m, n, x, n - y - 1, s2, t2, R);
 						if(ret.first == -1 or ret.second == -1) return {-1, -1};
 						return reflect_over_x(ret.second, ret.first, n);
+					} else if(n - 1 - r.r2 == 2) {
+						r.r2 = n - 1;
+						return hamiltonian_path_util(m, n, x, y, s, t, r);
 					}
 					// spustamo r.r2 za 1
 					++r.r2;
@@ -1521,7 +1553,7 @@ std::pair<int, int> find_hamiltonian_path_L(int m, int n, int x, int y, const st
 	
 	if(s == t) return hamiltonian_cycle_L_CCW(m, n, x, y);
 	// prvo proveravamo da li su u istom regionu
-	if(s.second < m and t.second < m) {
+	if(s.second < m and t.second < m and has_hamiltonian_path(m, 5*n - 4, s, t)) {
 		// onda su na istoj vertikali
 		// radimo strip
 		// na vertikali nadjemo put
