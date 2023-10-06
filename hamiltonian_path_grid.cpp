@@ -1723,9 +1723,11 @@ std::pair<int, int> find_hamiltonian_path_L(int m, int n, int x, int y, const st
 			// t crno i m parno: q = (m - 1, 4*n - 4)
 			// t crno i m neparno: q = (m - 1, 4*n - 3)
 			// (A and B) or (!A and !B) --> q = (m - 1, 4*n - 3)
-			std::pair<int, int> q = {4*n - 3 - ((t.first + t.second + m) % 2), m - 1};
-			std::pair<int, int> p1 = {q.first - 4*n + 4, 0};
+			// std::pair<int, int> q = {4*n - 3 - ((t.first + t.second + m) % 2), m - 1};
+			// std::pair<int, int> p1 = {q.first - 4*n + 4, 0};
 			std::pair<int, int> s1 = {s.first - 4*n + 4, s.second - m};
+			std::pair<int, int> p1 = {is_white(s1), 0};
+			std::pair<int, int> q = {4*n - 4 + p1.first, m - 1};
 			if(!has_hamiltonian_path(m, 5*n - 4, q, t) or !has_hamiltonian_path(2*m - 2, n, s1, p1)) return {-1, -1};
 			if(x == m and y == q.first) return go_left(x, y);
 			if(x < m) {
@@ -1902,8 +1904,7 @@ std::pair<int, int> find_hamiltonian_path_F(int m, int n, int x, int y, const st
 		if(x >= m and y >= 2*n - 2) {
 			// mali
 			// odredimo orijentaciju
-			// posmatramo tacke (m - 1, 2n - 2), (m - 1, 2n - 1), (m - 1, 2n)
-			// ako nema ravne ivice izmedju njih, nema puta
+			// posmatramo tacke (m - 1, 2n - 2), (m - 1, 2n - 1), (m - 1, 2n), (m - 1, 2n + 1), (m - 1, 2n + 2)
 			bool orientation;
 			auto ret = find_hamiltonian_path_L(m, n, m - 1, 3*n - 3, s1, t1);
 			if(ret.second == m - 1 and ret.first == 3*n - 4) {
@@ -1919,7 +1920,42 @@ std::pair<int, int> find_hamiltonian_path_F(int m, int n, int x, int y, const st
 					if(ret.second == m - 1 and ret.first == 3*n - 4) {
 						orientation = true;
 					} else {
-						return {-1, -1};
+						if(n > 3) {
+							if(ret.second == m - 1) {
+								orientation = false;
+							} else {
+								ret = find_hamiltonian_path_L(m, n, m - 1, 3*n - 6, s1, t1);
+								if(ret.second == m - 1 and ret.first == 3*n - 5) {
+									orientation = true;
+								} else {
+									if(n > 4) {
+										if(ret.second == m - 1) {
+											orientation = false;
+										} else {
+											ret = std::pair{m - 1, 3*n - 6};
+											orientation = true;
+										}
+									} else {
+										// n == 4
+										// svodimo na ciklus
+										if(s.first < t.first) {
+											orientation = true;
+											ret.first = s.first - 1;
+										} else if(s.first > t.first) {
+											orientation = false;
+											ret.first = s.first + 1;
+										} else {
+											return {-1, -1};
+										}
+									}
+								}
+							}
+						} else {
+							// n == 3
+							// ne moze doci do ovog slucaja
+							std::cout << 1 << '\n';
+							return {-1, -1};
+						} 
 					}
 				}
 			}
@@ -1956,7 +1992,42 @@ std::pair<int, int> find_hamiltonian_path_F(int m, int n, int x, int y, const st
 					if(ret.second == m - 1 and ret.first == 3*n - 4) {
 						if(x == m - 1 and y == 2*n) return go_right(x, y);
 					} else {
-						return {-1, -1};
+						if(n > 3) {
+							if(ret.second == m - 1) {
+								if(x == m - 1 and y == 2*n) return go_right(x, y);
+							} else {
+								ret = find_hamiltonian_path_L(m, n, m - 1, 3*n - 6, s1, t1);
+								if(ret.second == m - 1 and ret.first == 3*n - 5) {
+									if(x == m - 1 and y == 2*n + 1) return go_right(x, y);
+								} else {
+									if(n > 4) {
+										if(ret.second == m - 1) {
+											if(x == m - 1 and y == 2*n + 1) return go_right(x, y);
+										} else {
+											if(x == m - 1 and y == 2*n + 2) return go_right(x, y);
+										}
+									} else {
+										// n == 4
+										// s i t su susedne
+										// svodimo na ciklus
+										if(x == t.second and y == t.first) return {-1, -1};
+										// funkcija za ciklus u obrnutom L
+										if(s.first < t.first) {
+											ret = hamiltonian_cycle_L_CW(m, n, x, 5*n - 5 - y);
+										} else if(s.first > t.first) {
+											ret = hamiltonian_cycle_L_CCW(m, n, x, 5*n - 5 - y);
+										} else {
+											return {-1, -1};
+										}
+										
+										return reflect_over_x(ret.second, ret.first, 5*n - 4);
+										
+									}
+								}
+							}
+						} else {
+							// n == 3
+						}
 					}
 				}
 			}
