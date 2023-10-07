@@ -1617,6 +1617,9 @@ std::pair<int, int> find_hamiltonian_path_L(int m, int n, int x, int y, const st
 				return ret;
 			}
 		}
+	} else if(s.second < m and t.second < m and (s.first > n or t.first > n)) {
+		return {-1, -1};
+	
 	} else if(s.first >= 4*n - 4 and t.first >= 4*n - 4) {
 		// onda su na istoj horizontali
 		// radimo strip
@@ -1847,11 +1850,31 @@ std::pair<int, int> find_hamiltonian_path_C(int m, int n, int x, int y, const st
 		
 		}
 		
+	} else if(!(s.second >= m and s.first < n) and !(t.second >= m and t.first < n)) {
+		if(!(s.second >= m and s.first >= 4*n - 4) and !(t.first >= 4*n - 4 and t.second >= m)) {
+			// radimo strip sa obrnutim L i donjim desnim pravougaonikom
+			// reflektujemo po x-osi
+			auto s1 = reflect_over_x(s.second, s.first, 5*n - 4);
+			auto t1 = reflect_over_x(t.second, t.first, 5*n - 4);
+			
+			if(auto ret = find_hamiltonian_path_L(m, n, s1.second, s1.first, s1, t1); ret.first < 0 or ret.second < 0) return {-1, -1};
+			
+			auto ret = find_hamiltonian_path_C(m, n, x, 5*n - 5 - y, s1, t1);
+			
+			if(ret.first == -1 or ret.second == -1) return {-1, -1};
+			
+			return reflect_over_x(ret.second, ret.first, 5*n - 4);
+		} else {
+			return {-1, -1};
+		
+		}
+	
 	} else if(!(s.second >= m and s.first >= 4*n - 4) and !(t.first >= 4*n - 4 and t.second >= m)) {
 		// radimo strip sa obrnutim L i donjim desnim pravougaonikom
 		// reflektujemo po x-osi
 		auto s1 = reflect_over_x(s.second, s.first, 5*n - 4);
 		auto t1 = reflect_over_x(t.second, t.first, 5*n - 4);
+		if(auto ret = find_hamiltonian_path_L(m, n, s1.second, s1.first, s1, t1); ret.first < 0 or ret.second < 0) return {-1, -1};
 		auto ret = find_hamiltonian_path_C(m, n, x, 5*n - 5 - y, s1, t1);
 		if(ret.first == -1 or ret.second == -1) return {-1, -1};
 		return reflect_over_x(ret.second, ret.first, 5*n - 4);
