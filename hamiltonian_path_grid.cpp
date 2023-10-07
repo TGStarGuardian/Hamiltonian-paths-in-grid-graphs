@@ -822,12 +822,33 @@ std::pair<bool, std::pair<int, int>> find_orientation_m1(int m, int n, const pee
 
 template<typename f>
 std::pair<bool, std::pair<int, int>> find_orientation_m2(int m, int n, const peeling& r, const std::pair<int, int>& s, const std::pair<int, int>& t, f& find_m5) {
-	// refleksijom svodimo na slucaj sa M1
-	auto s2 = reflect_over_y(s.second, s.first, m);
-	auto t2 = reflect_over_y(t.second, t.first, m);
-	peeling R = {r.r1, r.r2, m - r.r4 - 2, m - r.r3 - 2};
-	auto ret = find_orientation_m1(m, n, R, s2, t2, find_m5);
-	return {!ret.first, reflect_over_y(ret.second.second, ret.second.first, m)};
+	std::pair<int, int> s1 = {s.first - r.r1 - 1, s.second - r.r3 - 1};
+	std::pair<int, int> t1 = {t.first - r.r1 - 1, t.second - r.r3 - 1};
+	int m1 = r.r4 - r.r3;
+	int n1 = r.r2 - r.r1;
+	// proveravamo da li (0, m - 1) ide dole
+	if(auto ret = find_m5(m1, n1, m1 - 1, 0, s1, t1); !ret.second) {
+		// tacka (0, m - 1) ide dole
+		// CW je orijentacija
+		// tacka (0, m - 1) ide levo od sebe
+		return {false, {r.r1 + 1, r.r4 + 1}};
+	} else {
+		// proveravamo (1, m - 1)
+		ret = find_m5(m1, n1, m1 - 1, 1, s1, t1);
+		if(!ret.second) {
+			// ide na gore
+			// CCW je orijentacija
+			return {!ret.first, {r.r1 + 2, r.r4 + 1}};
+		} else {
+			// proveravamo (2, m - 1)
+			ret = find_m5(m1, n1, m1 - 1, 2, s1, t1);
+			if(!ret.second and ret.first == 1) {
+				return {true, {r.r1 + 3, r.r4 + 1}};
+			} else {
+				return {false, {r.r1 + 3, r.r4 + 1}};
+			}
+		}
+	}
 }
 
 // povezujemo M5 sa M1
@@ -855,13 +876,23 @@ std::pair<int, int> connect_m5_m1(int m, int n, int x, int y, const peeling& r, 
 template<typename f>
 // povezujemo M5 sa M2
 std::pair<int, int> connect_m5_m2(int m, int n, int x, int y, const peeling& r, const std::pair<int, int>& s, const std::pair<int, int>& t, f& find_m5) {
-	// svodimo na M1 refleksijom
-	auto s2 = reflect_over_y(s.second, s.first, m);
-	auto t2 = reflect_over_y(t.second, t.first, m);
-	peeling R = {r.r1, r.r2, m - r.r4 - 2, m - r.r3 - 2};
-	auto ret = connect_m5_m1(m, n, m - 1 - x, y, R, s2, t2, find_m5);
-	if(ret.first == -1 or ret.second == -1) return {-1, -1};
-	return reflect_over_y(ret.second, ret.first, m);
+	// dohvatimo orijentaciju
+	
+	auto T = find_orientation_m2(m, n, r, s, t, find_m5);
+	auto ret = T.second;
+	if(y == ret.first && x == ret.second - 1) {
+		return go_right(x, y);
+	} else {
+		std::pair<int, int> s1 = {s.first - r.r1 - 1, s.second - r.r3 - 1};
+		std::pair<int, int> t1 = {t.first - r.r1 - 1, t.second - r.r3 - 1};
+		int m1 = r.r4 - r.r3;
+		int n1 = r.r2 - r.r1;
+		ret = find_m5(m1, n1, x - r.r3 - 1, y - r.r1 - 1, s1, t1);
+		if(ret.first == -1 || ret.second == -1) return {-1, -1};
+		ret.first += r.r1 + 1;
+		ret.second += r.r3 + 1;
+		return ret;
+	}
 }
 
 // funkcija prima parametre vezane za mrezu,
@@ -995,36 +1026,6 @@ inline bool not_connect_m5_ccw(int x, int y, std::pair<int, int>& ret) {
 
 inline bool not_connect_m5_cw(int x, int y, std::pair<int, int>& ret) {
 	return false;
-}
-
-std::pair<int, int> special_case_1(int m, int n, int x, int y, const std::pair<int, int>& s, const std::pair<int, int>& t) {
-	switch(x) {
-		case 0:
-			switch(y) {
-				case 0: return {0, 1};
-				case 1: return {0, 0};
-				case 2: return {1, 0};
-			}
-		case 1:
-			switch(y) {
-				case 0: return {1, 1};
-				case 1: return {1, 2};
-				case 2: return {0, 2};
-			}
-		case 2:
-			switch(y) {
-				case 0: return {0, 3};
-				case 1: return {0, 2};
-				case 2: return {-1, -1};
-			}
-		case 3:
-			switch(y) {
-				case 0: return {1, 3};
-				case 1: return {2, 3};
-				case 2: return {2, 2};
-			}
-		}
-		return {-1, -1};
 }
 
 std::pair<int, int> special_case_2(int m, int n, int x, int y, const std::pair<int, int>& s, const std::pair<int, int>& t) {
@@ -1542,7 +1543,7 @@ std::pair<int, int> hamiltonian_cycle_L_CW(int m, int n, int x, int y) {
 	return ret;
 }
 
-bool has_hamiltonian_path_L(int m, int n, std::pair<int, int>& s, std::pair<int, int>& t) {
+bool has_hamiltonian_path_L(int m, int n, const std::pair<int, int>& s, const std::pair<int, int>& t) {
 	auto ret = find_hamiltonian_path_L(m, n, s.second, s.first, s, t);
 	return (ret.first >= 0 and ret.second >= 0);
 }
@@ -1623,6 +1624,9 @@ std::pair<int, int> find_hamiltonian_path_L(int m, int n, int x, int y, const st
 		// pa spojimo
 		std::pair<int, int> s1 = {s.first - 4*n + 4, s.second};
 		std::pair<int, int> t1 = {t.first - 4*n + 4, t.second};
+		
+		if(!has_hamiltonian_path(3*m - 2, n, s1, t1)) return {-1, -1};
+		
 		if(y >= 4*n - 4) {
 			// 3m - 2 >= 3 akko 3m >= 5
 			// ovo ne moze jedino ako je m == 1
@@ -1650,13 +1654,13 @@ std::pair<int, int> find_hamiltonian_path_L(int m, int n, int x, int y, const st
 			if(!ret.first) {
 				orientation = false;
 			} else {
-				ret = find_hamiltonian_path(3*m - 2, n, 0, 1, s1, t1);
+				ret = find_hamiltonian_path(3*m - 2, n, 1, 0, s1, t1);
 				if(!ret.first and !ret.second) {
 					orientation = true;
 				} else if(!ret.first) {
 					orientation = false;
 				} else {
-					ret = find_hamiltonian_path(3*m - 2, n, 0, 2, s1, t1);
+					ret = find_hamiltonian_path(3*m - 2, n, 2, 0, s1, t1);
 					if(!ret.first and ret.second == 1) {
 						orientation = true;
 					} else if(!ret.first) {
@@ -1768,7 +1772,7 @@ std::pair<int, int> hamiltonian_cycle_C_CW(int m, int n, int x, int y) {
 	return reflect_over_x(ret.second, ret.first, 5*n - 4);
 }
 
-bool has_hamiltonian_path_C(int m, int n, std::pair<int, int>& s, std::pair<int, int>& t) {
+bool has_hamiltonian_path_C(int m, int n, const std::pair<int, int>& s, const std::pair<int, int>& t) {
 	auto ret = find_hamiltonian_path_C(m, n, s.second, s.first, s, t);
 	return (ret.first >= 0 and ret.second >= 0);
 }
@@ -1782,7 +1786,7 @@ std::pair<int, int> find_hamiltonian_path_C(int m, int n, int x, int y, const st
 	// u obrnutom L su ako nijedan nije u malom pravougaoniku dole desno
 	// u L su ako nijedan nije u malom pravougaoniku gore desno
 		
-	if(!(s.second >= m and s.first < n) and !(t.second >= m and t.first < n)) {
+	if(!(s.second >= m and s.first < n) and !(t.second >= m and t.first < n) and has_hamiltonian_path_L(m, n, s, t)) {
 		// radimo strip sa pravim L i gornjim desnim pravougaonikom
 		if(x >= m and y < n) {
 			// ciklus
@@ -1890,7 +1894,7 @@ std::pair<int, int> find_hamiltonian_path_C(int m, int n, int x, int y, const st
 
 }
 
-bool has_hamiltonian_path_F(int m, int n, std::pair<int, int>& s, std::pair<int, int>& t) {
+bool has_hamiltonian_path_F(int m, int n, const std::pair<int, int>& s, const std::pair<int, int>& t) {
 	auto ret = find_hamiltonian_path_F(m, n, s.second, s.first, s, t);
 	return (ret.first >= 0 and ret.second >= 0);
 }
@@ -1902,8 +1906,12 @@ std::pair<int, int> find_hamiltonian_path_F(int m, int n, int x, int y, const st
 		// oba su u L
 		// pravimo put u L, ciklus u malom
 		// L je obrnuto, pa moramo da reflektujemo
-		auto s1 = reflect_over_x(s.second, s.first, 5*n - 4);
-		auto t1 = reflect_over_x(t.second, t.first, 5*n - 4);
+		std::pair<int, int> s1 = reflect_over_x(s.second, s.first, 5*n - 4);
+		std::pair<int, int> t1 = reflect_over_x(t.second, t.first, 5*n - 4);
+		
+		auto flag = find_hamiltonian_path_L(m, n, s1.second, s1.first, s1, t1);
+		
+		if(flag.first < 0 or flag.second < 0) return {-1, -1};
 		
 		if(x >= m and y >= 2*n - 2) {
 			// mali
@@ -2343,7 +2351,7 @@ std::pair<int, int> find_hamiltonian_path_F(int m, int n, int x, int y, const st
 	return {-1, -1};
 }
 
-bool has_hamiltonian_path_E(int m, int n, std::pair<int, int>& s, std::pair<int, int>& t) {
+bool has_hamiltonian_path_E(int m, int n, const std::pair<int, int>& s, const std::pair<int, int>& t) {
 	auto ret = find_hamiltonian_path_E(m, n, s.second, s.first, s, t);
 	return (ret.first >= 0 and ret.second >= 0);
 }
@@ -2356,6 +2364,8 @@ std::pair<int, int> find_hamiltonian_path_E(int m, int n, int x, int y, const st
 	
 	if(!(s.second >= m and s.first >= 2*n - 2 and s.first < 3*n - 2) and !(t.second >= m and t.first >= 2*n - 2 and t.first < 3*n - 2)) {
 		// s i t su u C
+		if(auto ret = find_hamiltonian_path_C(m, n, s.second, s.first, s, t); ret.first < 0 or ret.second < 0) return {-1, -1};
+		
 		if(x >= m and y >= 2*n - 2 and y < 3*n - 2) {
 			// ciklus
 			bool orientation;
@@ -2420,7 +2430,7 @@ std::pair<int, int> find_hamiltonian_path_E(int m, int n, int x, int y, const st
 				ret.second += m;
 				return ret;
 			} else {
-				return H_C_M2_CW(2*m - 4, n, x - m, y - 2*n + 2);
+				auto ret = H_C_M2_CW(2*m - 4, n, x - m, y - 2*n + 2);
 				ret.first += 2*n - 2;
 				ret.second += m;
 				return ret;
@@ -2491,7 +2501,7 @@ std::pair<int, int> find_hamiltonian_path_E(int m, int n, int x, int y, const st
 	
 	// proverimo da nije nijedan u donjem
 	// ako nije, onda su oba u F
-	if(!(s.second >= m and s.first >= 4*n - 4) and !(t.second >= m and t.first >= 4*n - 4)) {
+	if(!(s.second >= m and s.first >= 4*n - 4) and !(t.second >= m and t.first >= 4*n - 4) and has_hamiltonian_path_F(m, n, s, t)) {
 		// u pravom F su
 		// u F pravimo put, u malom dole pravimo ciklus
 		// i spajamo
