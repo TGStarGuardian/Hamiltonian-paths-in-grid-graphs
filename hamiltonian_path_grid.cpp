@@ -452,7 +452,6 @@ std::pair<int, int> find_path_m5(int m, int n, int x, int y, const std::pair<int
 		// ako je t desno od s, onda okrenemo graf po y-osi
 			
 		if(t.second < s.second) {
-			std::cout << 1;
 			auto s1 = reflect_over_y(s.second, s.first, m);
 			auto t1 = reflect_over_y(t.second, t.first, m);
 			auto ret = find_path_m5(m, n, m - 1 - x, y, s1, t1);
@@ -1764,6 +1763,11 @@ std::pair<int, int> hamiltonian_cycle_C_CCW(int m, int n, int x, int y) {
 
 }
 
+std::pair<int, int> hamiltonian_cycle_C_CW(int m, int n, int x, int y) {
+	auto ret = hamiltonian_cycle_C_CCW(m, n, x, 5*n - 5 - y);
+	return reflect_over_x(ret.second, ret.first, 5*n - 4);
+}
+
 bool has_hamiltonian_path_C(int m, int n, std::pair<int, int>& s, std::pair<int, int>& t) {
 	auto ret = find_hamiltonian_path_C(m, n, s.second, s.first, s, t);
 	return (ret.first >= 0 and ret.second >= 0);
@@ -1953,7 +1957,6 @@ std::pair<int, int> find_hamiltonian_path_F(int m, int n, int x, int y, const st
 						} else {
 							// n == 3
 							// ne moze doci do ovog slucaja
-							std::cout << 1 << '\n';
 							return {-1, -1};
 						} 
 					}
@@ -2010,6 +2013,7 @@ std::pair<int, int> find_hamiltonian_path_F(int m, int n, int x, int y, const st
 										// n == 4
 										// s i t su susedne
 										// svodimo na ciklus
+										if(x == s.second and y == s.first) return go_right(x, y);
 										if(x == t.second and y == t.first) return {-1, -1};
 										// funkcija za ciklus u obrnutom L
 										if(s.first < t.first) {
@@ -2369,7 +2373,41 @@ std::pair<int, int> find_hamiltonian_path_E(int m, int n, int x, int y, const st
 					if(ret.second == m - 1 and ret.first == 2*n - 1) {
 						orientation = true;					
 					} else {
-						return {-1, -1};
+						if(n > 3) {
+							if(ret.second == m - 1) {
+								orientation = false;
+							} else {
+								ret = find_hamiltonian_path_C(m, n, m - 1, 2*n + 1, s, t);
+								if(ret.second == m - 1 and ret.first == 2*n) {
+										orientation = true;
+								} else {
+									if(n > 4) {
+										if(ret.second == m - 1) {
+											orientation = false;
+										} else {
+											ret.first = 2*n + 1;
+											orientation = true;
+										}
+									
+									} else {
+										if(s.first > t.first) {
+											ret.first = s.first + 1;
+											orientation = false;
+										} else if(s.first < t.first) {
+											ret.first = s.first - 1;
+											orientation = true;
+										} else {
+											return {-1, -1};
+										}
+									
+									}
+								
+								}
+							}
+						} else {
+							// ovaj slucaj nije moguc
+							return {-1, -1};
+						}
 					}
 				}
 			}
@@ -2403,7 +2441,44 @@ std::pair<int, int> find_hamiltonian_path_E(int m, int n, int x, int y, const st
 					if(ret.second == m - 1 and ret.first == 2*n - 1) {
 						if(x == m - 1 and y == 2*n) return go_right(x, y);					
 					} else {
-						return {-1, -1};
+						if(n > 3) {
+							if(ret.second == m - 1) {
+								if(x == m - 1 and y == 2*n) return go_right(x, y);
+							} else {
+								ret = find_hamiltonian_path_C(m, n, m - 1, 2*n + 1, s, t);
+								if(ret.second == m - 1 and ret.first == 2*n) {
+									if(x == m - 1 and y == 2*n + 1) return go_right(x, y);
+								} else {
+									if(n > 4) {
+										if(ret.second == m - 1) {
+											if(x == m - 1 and y == 2*n + 1) return go_right(x, y);
+										} else {
+											if(x == m - 1 and y == 2*n + 2) return go_right(x, y);
+										}
+									} else {
+										if(x == t.second and y == t.first) return {-1, -1};
+										
+										if(x == s.second and y == s.first) return go_right(x, y);
+										
+										if(s.first > t.first) {
+											return hamiltonian_cycle_C_CCW(m, n, x, y);
+										} else if(s.first < t.first) {
+											return hamiltonian_cycle_C_CW(m, n, x, y);
+										
+										} else {
+											return {-1, -1};
+										}
+									}
+								
+								}
+							
+							
+							}
+						
+						} else {
+							// ovaj slucaj nije moguc
+							return {-1, -1};
+						}
 					}
 				}
 			}
