@@ -175,7 +175,7 @@ if(type < 0 or type > 4) {
 	return -1;
 }
 
-int m, n;
+long m, n;
 std::pair<int, int> s, t;
 
 std::cout << "m: ";
@@ -275,6 +275,7 @@ if(parallel) {
 	auto stop = std::chrono::high_resolution_clock::now();
 	auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
 	std::cout << "Time spent: " << duration.count() << " microseconds\n";
+	std::cout << hamiltonian_path[V - 1];
 
 } else {
 
