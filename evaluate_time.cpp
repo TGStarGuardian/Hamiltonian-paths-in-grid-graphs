@@ -110,14 +110,10 @@ std::pair<int, int> number_to_point_E(long m, long n, long x) {
 	}
 }
 
-void worker_thread(int thread_index, long begin, int m, int n, long V, const std::pair<int, int>* s, const std::pair<int, int>* t, std::vector<std::pair<int, int>>* path) {
-
-	auto find_path = find_hamiltonian_path;
-	auto convert = number_to_point_rectangle;
-	
+void worker_thread(int thread_index, long begin, long V, int m, int n, const std::pair<int, int>* s, const std::pair<int, int>* t, std::vector<std::pair<int, int>>* path) {
 	for(long i = begin; i < begin + V; ++i) {
-		auto point = convert(m, n, i);
-		(*path)[i] = find_path(m, n, point.second, point.first, *s, *t);
+		auto point = number_to_point_rectangle(m, n, i);
+		(*path)[i] = find_hamiltonian_path(m, n, point.second, point.first, *s, *t);
 	}
 	
 }
@@ -141,13 +137,13 @@ long long evaluate_time(int number_of_threads, long m, long n, long V, const std
 	
 		auto start = std::chrono::high_resolution_clock::now();
 		for(int i = 0; i < number_of_threads; ++i) {
-			threads.push_back(std::thread(worker_thread, i, step * i, (i == number_of_threads - 1)? V + step - step * number_of_threads : step, m, n, &s, &t, &hamiltonian_path));
+			threads.emplace_back(std::thread(worker_thread, i, step * i, (i == number_of_threads - 1)? V + step - step * number_of_threads : step, m, n, &s, &t, &hamiltonian_path));
 		}
 	
 		for(auto& t : threads) {
 			t.join();
 		}
-	
+		
 		auto stop = std::chrono::high_resolution_clock::now();
 		auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
 		return duration.count();
@@ -175,10 +171,11 @@ int main() {
 
 	srand(time(0));
 
+	/*
 	int number_of_threads;
 	std::cout << "Enter the number of threads: ";
 	std::cin >> number_of_threads;
-	
+	*/
 	
 	int T;
 	std::cout << "Enter the number of tests: ";
@@ -195,7 +192,7 @@ int main() {
 		std::cout << "No such file!\n";
 	} else {
 		std::cout << "File created successfully!\n";
-		data_csv << "m,n,V,sx,sy,tx,ty,time\n";
+		data_csv << "m,n,V,sx,sy,tx,ty,time1,time2,time4,time8\n";
 		for(int i = 0; i < T; ++i) {
 			// generisemo m i n nasumicno iz intervala [1000, 10000]
 			long m = 1000 + std::rand() % 9000;
@@ -221,18 +218,22 @@ int main() {
 			} else {
 				// ako su istih boja, okrecemo jednu
 				if((s.first + s.second) % 2 == (t.first + t.second) % 2) {
-					if((s.first + s.second) % 2) {
-						if(s.first > 0) --s.first;
-						else ++s.first;
-					}
+					if(s.first > 0) --s.first;
+					else ++s.first;
 				}			
 			}
 			
 			long V = m*n;
 			
-			long long time = evaluate_time(number_of_threads, m, n, V, s, t);
+			long long time1 = evaluate_time(1, m, n, V, s, t);
+			long long time2 = evaluate_time(2, m, n, V, s, t);			
+			long long time3 = evaluate_time(4, m, n, V, s, t);
+			long long time4 = evaluate_time(8, m, n, V, s, t);
 			
-			data_csv << m << ',' << n << ',' << V << ',' << s.second << ',' << s.first << ',' << t.second << ',' << t.first << ',' << time << '\n';
+			data_csv << m << ',' << n << ',' << V << ',' << s.second << ',' << s.first << ',' << t.second << ',' << t.first << ','
+			<< time1 << ',' << time2 << ',' << ',' << time3 << ',' << time4 << '\n';
+			
+			if(!(i % 10)) std::cout << "Round " << i/10 << " done!\n";
 			
 		}
 		
