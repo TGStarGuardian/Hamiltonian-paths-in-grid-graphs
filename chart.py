@@ -28,5 +28,80 @@ ax2 = df.plot.scatter(x = 'V', y = 'time2', s = 10, ax = ax1, color = 'b', label
 ax3 = df.plot.scatter(x = 'V', y = 'time4', s = 10, ax = ax1, color = 'g', label = '4 threads');
 ax4 = df.plot.scatter(x = 'V', y = 'time8', s = 10, ax = ax1, color = 'purple', label = '8 threads');
 
+speedup2 = df['time1'] / df['time2']
+speedup4 = df['time1'] / df['time4']
+speedup8 = df['time1'] / df['time8']
+
+df.insert(2, 'speedup2', speedup2, True)
+df.insert(5, 'speedup4', speedup4, True)
+df.insert(7, 'speedup8', speedup8, True)
+
+bx1 = df.plot.scatter(x = 'V', y = 'speedup2', s = 10, color = 'r', label = '2 thread');
+bx2 = df.plot.scatter(x = 'V', y = 'speedup4', s = 10, ax = bx1, color = 'b', label = '4 threads');
+bx3 = df.plot.scatter(x = 'V', y = 'speedup8', s = 10, ax = bx1, color = 'g', label = '8 threads');
+
+from sklearn import linear_model
+from sklearn import metrics
+import numpy as np
+
+x = np.array(df['V'])
+y = np.array(df['speedup2'])
+model = linear_model.LinearRegression()
+model.fit(x.reshape(-1, 1), y)
+
+print(model.coef_[0])
+y_predicted = model.predict(x.reshape(-1, 1))
+mae = metrics.mean_absolute_error(y_predicted, y)
+mse = metrics.mean_squared_error(y_predicted, y)
+r2 = metrics.r2_score(y_predicted, y)
+print('MAE = ', mae)
+print('MSE = ', mse)
+print('R2 = ', r2)
+
+x1 = [0.0, model.intercept_]
+x2 = [1000000.0, 1000000.0 * model.coef_[0] + model.intercept_]
+
+plt.axline(x1, x2)
+
+x = np.array(df['V'])
+y = np.array(df['speedup4'])
+model = linear_model.LinearRegression()
+model.fit(x.reshape(-1, 1), y)
+
+print(model.coef_[0])
+y_predicted = model.predict(x.reshape(-1, 1))
+mae = metrics.mean_absolute_error(y_predicted, y)
+mse = metrics.mean_squared_error(y_predicted, y)
+r2 = metrics.r2_score(y_predicted, y)
+print('MAE = ', mae)
+print('MSE = ', mse)
+print('R2 = ', r2)
+
+
+x1 = [0.0, model.intercept_]
+x2 = [1000000.0, 1000000.0 * model.coef_[0] + model.intercept_]
+
+plt.axline(x1, x2)
+
+x = np.array(df['V'])
+y = np.array(df['speedup8'])
+model = linear_model.LinearRegression()
+model.fit(x.reshape(-1, 1), y)
+
+print(model.coef_[0])
+y_predicted = model.predict(x.reshape(-1, 1))
+mae = metrics.mean_absolute_error(y_predicted, y)
+mse = metrics.mean_squared_error(y_predicted, y)
+r2 = metrics.r2_score(y_predicted, y)
+print('MAE = ', mae)
+print('MSE = ', mse)
+print('R2 = ', r2)
+
+
+x1 = [0.0, model.intercept_]
+x2 = [1000000.0, 1000000.0 * model.coef_[0] + model.intercept_]
+
+plt.axline(x1, x2)
+
 
 plt.show()
