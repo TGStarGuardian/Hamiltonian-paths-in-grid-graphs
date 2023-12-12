@@ -1078,18 +1078,19 @@ std::pair<int, int> special_case_2(int m, int n, int x, int y, const std::pair<i
 				tmp.second += 2;
 				return tmp;
 			} else if(ret = path_n_2(3, 1, 1, s, p); ret.second) {
-				if(x == 2 and y == 1) return go_right(x, y);
 				if(ret.first) {
+					if(x == 2 and y == 2) return go_left(x, y);
 					auto tmp = H_C_M2_CW(m - 4, 3, x - 2, y);
 					tmp.second += 2;
 					return tmp;
 				} else {
+					if(x == 2 and !y) return go_left(x, y);
 					auto tmp = H_C_M2_M4_CCW(m - 4, 3, x - 2, y);
 					tmp.second += 2;
 					return tmp;
 				}
 			} else {
-				if(x == 2 and y == 2) return go_right(x, y);
+				if(x == 2 and y == 1) return go_left(x, y);
 				auto tmp = H_C_M2_M4_CCW(m - 4, 3, x - 2, y);
 				tmp.second += 2;
 				return tmp;
@@ -1478,6 +1479,7 @@ std::pair<int, int> hamiltonian_path_util(int m, int n, int x, int y, const std:
 				if(ret.first == -1 or ret.second == -1) return {-1, -1};
 				return reflect_over_x(ret.second, ret.first, n);
 			}
+			
 			r.r2 = n - 1;
 			return connect(m, n, x, y, s, t, r, special_case_2);
 			
