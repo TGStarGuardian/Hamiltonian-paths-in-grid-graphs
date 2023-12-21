@@ -1885,7 +1885,7 @@ std::pair<int, int> find_hamiltonian_path_C(int m, int n, int x, int y, const st
 		// radimo split
 		// ako je t u obrnutom L, onda reflektujemo
 		// t je u obrnutom L ako je s zauzeo donji desni pravougaonik
-		if(!(s.second >= m and s.first >= 4*n - 4)) {
+		if(!(t.second >= m and t.first >= 4*n - 4)) {
 			auto s1 = reflect_over_x(s.second, s.first, 5*n - 4);
 			auto t1 = reflect_over_x(t.second, t.first, 5*n - 4);
 			auto ret = find_hamiltonian_path_C(m, n, x, 5*n - 5 - y, s1, t1);
@@ -1901,7 +1901,10 @@ std::pair<int, int> find_hamiltonian_path_C(int m, int n, int x, int y, const st
 			std::pair<int, int> s1 = {s.first, s.second - m};
 			std::pair<int, int> q = {p1.first, m - 1};
 			
-			if(!has_hamiltonian_path(2*m - 2, n, s1, p1) or !has_hamiltonian_path(m, n, q, t)) return {-1, -1};
+			// std::cout << s.first << " " << s.second << '\n';
+			// std::cout << q.first << " " << q.second << '\n';
+			
+			if(!has_hamiltonian_path(2*m - 2, n, s1, p1) or !has_hamiltonian_path_L(m, n, q, t)) return {-1, -1};
 			
 			if(x == m and y == p1.first) return go_left(x, y);
 			
@@ -2329,7 +2332,7 @@ std::pair<int, int> find_hamiltonian_path_F(int m, int n, int x, int y, const st
 		std::pair<int, int> p1 = reflect_over_x(m - 1, q1.first + 2*n - 2, 5*n - 4);
 		std::pair<int, int> s1 = reflect_over_x(s.second, s.first, 5*n - 4);
 		
-		if(!has_hamiltonian_path(2*m - 4, n, q1, t1) or !has_hamiltonian_path(m, n, s1, p1)) return {-1, -1};
+		if(!has_hamiltonian_path(2*m - 4, n, q1, t1) or !has_hamiltonian_path_L(m, n, s1, p1)) return {-1, -1};
 		
 		if(x >= m and y >= 2*n - 2 and y < 3*n - 2) {
 			auto ret = find_hamiltonian_path(2*m - 4, n, x - m, y - 2*n + 2, q1, t1);
@@ -2354,7 +2357,7 @@ std::pair<int, int> find_hamiltonian_path_F(int m, int n, int x, int y, const st
 		std::pair<int, int> q1 = reflect_over_x(m - 1, p1.first + 2*n - 2, 5*n - 4);
 		std::pair<int, int> t1 = reflect_over_x(t.second, t.first, 5*n - 4);
 		
-		if(!has_hamiltonian_path(2*m - 4, n, s1, p1) or !has_hamiltonian_path(m, n, q1, t1)) return {-1, -1};
+		if(!has_hamiltonian_path(2*m - 4, n, s1, p1) or !has_hamiltonian_path_L(m, n, q1, t1)) return {-1, -1};
 		
 		if(x >= m and y >= 2*n - 2 and y < 3*n - 2) {
 			if(x == m and y == p1.first + 2*n - 2) return go_left(x, y);
