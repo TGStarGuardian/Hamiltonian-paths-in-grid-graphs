@@ -827,7 +827,7 @@ std::pair<bool, std::pair<int, int>> find_orientation_m2(int m, int n, const pee
 	int m1 = r.r4 - r.r3;
 	int n1 = r.r2 - r.r1;
 	// proveravamo da li (0, m - 1) ide dole
-	if(auto ret = find_m5(m1, n1, m1 - 1, 0, s1, t1); !ret.second) {
+	if(auto ret = find_m5(m1, n1, m1 - 1, 0, s1, t1); ret.second == m1 - 1) {
 		// tacka (0, m - 1) ide dole
 		// CW je orijentacija
 		// tacka (0, m - 1) ide levo od sebe
@@ -835,14 +835,14 @@ std::pair<bool, std::pair<int, int>> find_orientation_m2(int m, int n, const pee
 	} else {
 		// proveravamo (1, m - 1)
 		ret = find_m5(m1, n1, m1 - 1, 1, s1, t1);
-		if(!ret.second) {
+		if(ret.second == m1 - 1) {
 			// ide na gore
 			// CCW je orijentacija
 			return {!ret.first, {r.r1 + 2, r.r4 + 1}};
 		} else {
 			// proveravamo (2, m - 1)
 			ret = find_m5(m1, n1, m1 - 1, 2, s1, t1);
-			if(!ret.second and ret.first == 1) {
+			if(ret.second == m1 - 1 and ret.first == 1) {
 				return {true, {r.r1 + 3, r.r4 + 1}};
 			} else {
 				return {false, {r.r1 + 3, r.r4 + 1}};
@@ -1416,35 +1416,19 @@ std::pair<int, int> hamiltonian_path_util(int m, int n, int x, int y, const std:
 		// ako je prazan, reflektujemo po x-osi
 		// proverimo zasto se desilo da nema puta u M5
 		if(n1 == 1) {
-			if(!m4_exists(r, n)) {
-				auto s2 = reflect_over_x(s.second, s.first, n);
-				auto t2 = reflect_over_x(t.second, t.first, n);
-				peeling R = {n - 2 - r.r2, n - 2 - r.r1, r.r3, r.r4};
-				auto ret = hamiltonian_path_util(m, n, x, n - y - 1, s2, t2, R);
-				if(ret.first == -1 or ret.second == -1) return {-1, -1};
-				return reflect_over_x(ret.second, ret.first, n);
-			}
-			// prvi slucaj
-			if(n - 1 - r.r2 == 2 and r.r1 + 1 == 2) {
-				r.r1 = -1;
-				return hamiltonian_path_util(m, n, x, y, s, t, r);
-			} else {
-				// ako M4 nema bar 3 reda i M3 postoji reflektujemo po x-osi
-				if(n - 1 - r.r2 == 2 and m3_exists(r)) {
-					auto s2 = reflect_over_x(s.second, s.first, n);
-					auto t2 = reflect_over_x(t.second, t.first, n);
-					peeling R = {n - 2 - r.r2, n - 2 - r.r1, r.r3, r.r4};
-					auto ret = hamiltonian_path_util(m, n, x, n - y - 1, s2, t2, R);
-					if(ret.first == -1 or ret.second == -1) return {-1, -1};
-					return reflect_over_x(ret.second, ret.first, n);
-				} else if(n - 1 - r.r2 == 2) {
-					r.r2 = n - 1;
-					return hamiltonian_path_util(m, n, x, y, s, t, r);
+			if(r.r1 + 1 > 2) {
+				--r.r1;
+			} else if(r.r1 + 1 == 2) {
+				if(n - 1 - r.r2 > 2) {
+					++r.r2;
+				} else {
+					r.r1 = -1;
 				}
-				// spustamo r.r2 za 1
-				++r.r2;
-				return hamiltonian_path_util(m, n, x, y, s, t, r);
+			} else {
+				r.r2 = n - 1;
 			}
+				
+			return hamiltonian_path_util(m, n, x, y, s, t, r);
 		} else if(m1 == 1) {
 			// svodimo na prvi slucaj dijagonalnom refleksijom
 			std::pair<int, int> s2 = {s.second, s.first}, t2 = {t.second, t.first};
@@ -1468,8 +1452,10 @@ std::pair<int, int> hamiltonian_path_util(int m, int n, int x, int y, const std:
 			}
 			return hamiltonian_path_util(m, n, x, y, s, t, r);
 		} else if(m1 == 2) {
-			r.r2 = s.first;
-			return hamiltonian_path_util(m, n, x, y, s, t, r);
+			std::pair<int, int> s2 = {s.second, s.first}, t2 = {t.second, t.first};
+			peeling R = {r.r3, r.r4, r.r1, r.r2};
+			auto ret = hamiltonian_path_util(n, m, y, x, s2, t2, R);
+			return {ret.second, ret.first};
 		} else if(n1 == 3) {
 			if(!m4_exists(r, n)) {
 				auto s2 = reflect_over_x(s.second, s.first, n);
@@ -1485,7 +1471,7 @@ std::pair<int, int> hamiltonian_path_util(int m, int n, int x, int y, const std:
 			
 		} else {
 			// onda je m1 == 3
-			// svodimo na treci slucaj rotacijom
+			// svodimo na treci slucaj dijagonalnom refleksijom
 			std::pair<int, int> s2 = {s.second, s.first}, t2 = {t.second, t.first};
 			peeling R = {r.r3, r.r4, r.r1, r.r2};
 			auto ret = hamiltonian_path_util(n, m, y, x, s2, t2, R);
