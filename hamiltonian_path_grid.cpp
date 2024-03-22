@@ -1538,7 +1538,6 @@ bool has_hamiltonian_path_L(int m, int n, const std::pair<int, int>& s, const st
 
 // algoritam za Hamiltonov put u L
 std::pair<int, int> find_hamiltonian_path_L(int m, int n, int x, int y, const std::pair<int, int>& s, const std::pair<int, int>& t) {
-	
 	if(s == t) return hamiltonian_cycle_L_CCW(m, n, x, y);
 	// prvo proveravamo da li su u istom regionu
 	if(s.second < m and t.second < m and has_hamiltonian_path(m, 5*n - 4, s, t)) {
@@ -1551,7 +1550,7 @@ std::pair<int, int> find_hamiltonian_path_L(int m, int n, int x, int y, const st
 			// gledamo desnu stranu
 			// 5n - 4 >= 3 akko 5n >= 7
 			// posmatramo redom (m - 1, 4n - 4), (m - 1, 4n - 3), (m - 1, 4n - 2)
-			// ako bilo koja ide gore ili dole, nju iskoristimo za povez
+			// ako bilo koja ide gore ili dole, nju iskoristimo za povezivanje
 			
 			if(find_hamiltonian_path(m, 5*n - 4, m - 1, 5*n - 5, s, t).second == m - 1) {
 				if(x == m - 1 and y == 5*n - 5) return go_right(x, y);
@@ -2515,10 +2514,11 @@ std::pair<int, int> find_hamiltonian_path_E(int m, int n, int x, int y, const st
 	
 	// proverimo da nije nijedan u donjem
 	// ako nije, onda su oba u F
-	if(!(s.second >= m and s.first >= 4*n - 4) and !(t.second >= m and t.first >= 4*n - 4) and has_hamiltonian_path_F(m, n, s, t)) {
+	if(!(s.second >= m and s.first >= 4*n - 4) and !(t.second >= m and t.first >= 4*n - 4)) {
 		// u pravom F su
 		// u F pravimo put, u malom dole pravimo ciklus
 		// i spajamo
+		if(!has_hamiltonian_path_F(m, n, s, t)) return {-1, -1};
 		if(x >= m and y >= 4*n - 4) {
 			// ciklus
 			bool orientation;
