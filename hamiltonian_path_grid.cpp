@@ -2514,11 +2514,10 @@ std::pair<int, int> find_hamiltonian_path_E(int m, int n, int x, int y, const st
 	
 	// proverimo da nije nijedan u donjem
 	// ako nije, onda su oba u F
-	if(!(s.second >= m and s.first >= 4*n - 4) and !(t.second >= m and t.first >= 4*n - 4)) {
+	if(!(s.second >= m and s.first >= 4*n - 4) and !(t.second >= m and t.first >= 4*n - 4) and has_hamiltonian_path_F(m, n, s, t)) {
 		// u pravom F su
 		// u F pravimo put, u malom dole pravimo ciklus
 		// i spajamo
-		if(!has_hamiltonian_path_F(m, n, s, t)) return {-1, -1};
 		if(x >= m and y >= 4*n - 4) {
 			// ciklus
 			bool orientation;
@@ -2575,14 +2574,9 @@ std::pair<int, int> find_hamiltonian_path_E(int m, int n, int x, int y, const st
 			return find_hamiltonian_path_F(m, n, x, y, s, t);
 		}
 	
-	}
-	
-	
-	if(!(s.second >= m and s.first < n) and !(t.second >= m and t.first < n)) {
+	} else if(auto s1 = reflect_over_x(s.second, s.first, 5*n - 4), t1 = reflect_over_x(t.second, t.first, 5*n - 4); !(s.second >= m and s.first < n) and !(t.second >= m and t.first < n) and has_hamiltonian_path_F(m, n, s1, t1)) {
 		// u obrnutom su F
 		// reflektujemo po x-osi
-		auto s1 = reflect_over_x(s.second, s.first, 5*n - 4);
-		auto t1 = reflect_over_x(t.second, t.first, 5*n - 4);
 		auto ret = find_hamiltonian_path_E(m, n, x, 5*n - 5 - y, s1, t1);
 		if(ret.first == -1 or ret.second == -1) return {-1, -1};
 		return reflect_over_x(ret.second, ret.first, 5*n - 4);
