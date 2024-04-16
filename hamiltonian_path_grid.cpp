@@ -1238,6 +1238,48 @@ std::pair<int, int> connect(int m, int n, int x, int y, const std::pair<int, int
 		}
 }
 
+std::pair<int, int> special_case_1(int m, int n, int x, int y, const std::pair<int, int>& s, const std::pair<int, int>& t) {
+	if(n & 1) {
+		auto s1 = std::pair{s.second, s.first};
+		auto t1 = std::pair{t.second, t.first};
+		auto ret = special_case_1(n, m, y, x, s1, t1);
+		return {ret.second, ret.first};
+	}
+	if(s.first == 0) {
+		auto s1 = reflect_over_x(s.second, s.first, n);
+		auto t1 = reflect_over_x(t.second, t.first, n);
+		auto ret = special_case_1(m, n, x, n - 1 - y, s1, t1);
+		return reflect_over_x(ret.second, ret.first, n);
+	} else if(s.second == m - 1) {
+		
+		auto s1 = reflect_over_y(s.second, s.first, m);
+		auto t1 = reflect_over_y(t.second, t.first, m);
+		auto ret = special_case_1(m, n, m - 1 - x, y, s1, t1);
+		return reflect_over_y(ret.second, ret.first, m);
+	} else {
+		if(m == 3 and n == 4 and t.second) {
+			std::array<std::array<std::pair<int, int>, 3>, 4> path = {
+				std::array{std::pair{0, 1}, std::pair{0, 2}, std::pair{1, 2}},
+				std::array{std::pair{0, 0}, std::pair{2, 1}, std::pair{1, 1}},
+				std::array{std::pair{1, 0}, std::pair{2, 2}, std::pair{3, 2}},
+				std::array{std::pair{2, 0}, std::pair{-1, -1}, std::pair{3, 1}}
+				};
+			return path[y][x];
+		} else if(m == 3 and n == 4) {
+			std::array<std::array<std::pair<int, int>, 3>, 4> path = {
+				std::array{std::pair{1, 0}, std::pair{0, 0}, std::pair{0, 1}},
+				std::array{std::pair{2, 0}, std::pair{1, 2}, std::pair{0, 2}},
+				std::array{std::pair{-1, -1}, std::pair{1, 1}, std::pair{2, 1}},
+				std::array{std::pair{3, 1}, std::pair{3, 2}, std::pair{2, 2}}
+				};
+			return path[y][x];
+		} else {
+			peeling r = {n - 5, n - 1, -1, 2};
+			return connect(m, n, x, y, s, t, r, special_case_1);
+		}
+	}
+}
+
 
 std::pair<int, int> hamiltonian_path_util(int m, int n, int x, int y, const std::pair<int, int>& s, const std::pair<int, int>& t, peeling& r) {
 	std::pair<int, int> s1 = {s.first - r.r1 - 1, s.second - r.r3 - 1};
@@ -1246,6 +1288,11 @@ std::pair<int, int> hamiltonian_path_util(int m, int n, int x, int y, const std:
 	int n1 = r.r2 - r.r1;
 	// ako postoji u M5 i tacka je u M5, idi u M5
 	// inace specijalan slucaj...
+	bool b1 = s.second == 0 and s.first == 0 and ((t.second == 0 and t.first == 1) or (t.second == 1 and t.first == 0));
+	bool b2 = s.second == m - 1 and s.first == 0 and ((t.second == m - 1 and t.first == 1) or (t.second == m - 2 and t.first == 0));
+	bool b3 = s.second == m - 1 and s.first == n - 1 and ((t.second == m - 1 and t.first == n - 2) or (t.second == m - 2 and t.first == n - 1));
+	bool b4 = s.second == 0 and s.first == n - 1 and ((t.second == 0 and t.first == n - 2) or (t.second == 1 and t.first == n - 1));
+	if((b1 or b2 or b3 or b4) and n > 2 and m > 2 and ((m & 1 or !(n & 1)) or (n & 1 or !(m & 1)))) return special_case_1(m, n, x, y, s, t);
 	
 	if(has_hamiltonian_path(m1, n1, s1, t1) and n1 >= 2 and m1 >= 2) {
 		return connect(m, n, x, y, s, t, r, find_path_m5);	
