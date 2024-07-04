@@ -29,7 +29,7 @@ Before running main.py, you'd need to install Cython and PyQt5. Follow the offic
 
 Having done this, run:
 
-  $ python setup.py build_ext --inplace
+  $ python3 setup.py build_ext --inplace
   
-  $ python main.py
+  $ python3 main.py
 
