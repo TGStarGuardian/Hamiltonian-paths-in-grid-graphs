@@ -11,7 +11,7 @@ Hamiltonian path is a path where each vertex is traversed exactly once, starting
 Hamiltonian cycle is a special case of Hamiltonian path where s = t.
 
 In the mentioned grid graph types (see above), there exist sequential algorithms that calculate Hamiltonian paths in O(mn) time, and parallel algorithms in O(1) time when the number of processors is close to the number of vertices.
-Each parallel step in a parallel algorithm can be computed independently and thus interprocessor communication is needed, which makes this solution highly scalable. The algorithms can be found in the following papers: https://doi.org/10.1016/S0167-8191(02)00135-7 and https://doi.org/10.1155/2012/475087.
+Each parallel step in a parallel algorithm can be computed independently (i.e. without interprocessor communication), which makes this solution highly scalable. The algorithms can be found in the following papers: https://doi.org/10.1016/S0167-8191(02)00135-7 and https://doi.org/10.1155/2012/475087.
 
 Files hamiltonian_path_grid.hpp and hamiltonian_path_grid.cpp contain implementations of the functions that calculate the next vertex in a path/cycle, while main.cpp contains code that runs those steps in parallel and stores the path in a vector. Note that find_hamiltonian_path functions can calculate both paths and cycles.
 
